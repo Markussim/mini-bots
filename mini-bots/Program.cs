@@ -67,7 +67,9 @@ namespace MiniBots
                 {
                     // Tell user how to use the bot, and limits of the bot
                     String helpMessage = "Mini Bot Help\n" +
-                        "To create a bot, type !bot <name> ```lua <code> ```\n";
+                        "To create a bot, type: ```!bot <name> <3x:`>lua \n<code> \n<3x:`> ```\n" + 
+                        "List bots: !list\n" + 
+                        "View help: !help";
 
                     await e.Message.RespondAsync(helpMessage);
                     
