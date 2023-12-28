@@ -2,7 +2,6 @@
 using System.IO; // Need to add this
 using DSharpPlus;
 using DSharpPlus.Entities;
-// using DSharpPlus.SlashCommands;
 using NLua;
 
 namespace MyFirstBot
@@ -31,8 +30,6 @@ namespace MyFirstBot
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
             });
-            //var slash = discord.UseSlashCommands();
-            //slash.RegisterCommands<SlashCommands>(554977304665784325);
 
             discord.MessageCreated += async (s, e) =>
             {
