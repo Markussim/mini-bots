@@ -80,9 +80,9 @@ namespace MyFirstBot
             lua = new Lua();
         }
 
-        public string Run(string input)
+        public string Run(string code, string message = "")
         {
-            object[] luaOutput = lua.DoString(input);
+            object[] luaOutput = lua.DoString(code);
 
             if (luaOutput.Length > 0)
             {
