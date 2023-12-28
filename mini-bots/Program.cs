@@ -76,10 +76,15 @@ namespace MiniBots
                 } else if (discordMessage.StartsWith("!list")){
                     // List all bots
                     String message = "";
-                    foreach (MiniBot miniBot in miniBots)
-                    {
-                        message += miniBot.name + "\n";
+                    if (miniBots.Count > 0){
+                        foreach (MiniBot miniBot in miniBots)
+                        {
+                            message += miniBot.name + "\n";
+                        }
+                    } else {
+                        message = "No bots running";
                     }
+                    
                     try
                     {
                         await e.Message.RespondAsync(message);
