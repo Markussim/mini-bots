@@ -1,17 +1,27 @@
 ﻿using System;
 using System.IO; // Need to add this
+using System.Text;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using NLua;
 
-namespace MyFirstBot
+namespace MiniBots
 {
     class Program
     {
+        struct MiniBot
+        {
+            public string name;
+            public string code;
+        }
+
+        
         static async Task Main(string[] args)
         {
             string token;
             DiscordLua discordLua = new DiscordLua();
+
+            List<MiniBot> miniBots = new List<MiniBot>();
 
             // Read the token from a file instead of having it in code
             try
@@ -39,25 +49,61 @@ namespace MyFirstBot
                 string discordMessage = e.Message.Content;
 
 
-                Console.WriteLine(discordMessage);
                 if (discordMessage.StartsWith("!bot"))
                 {
                     string code = discordMessage.Substring(5).Trim();
+                    int codeStartIndex = code.IndexOf("```");
+
+                    string name = code.Substring(0, codeStartIndex);
+
+                    code = code.Substring(codeStartIndex); // Remove name from code
+                    // Remove code block characters
                     code = code.Replace("```lua", "");
                     code = code.Replace("```", "");
-                    Console.WriteLine("Running lua: " + code);
+
+                    // Add bot to list
+                    miniBots.Add(new MiniBot { name = name, code = code });
+                } else if (discordMessage.StartsWith("!help"))
+                {
+                    // Tell user how to use the bot, and limits of the bot
+                    String helpMessage = "Mini Bot Help\n" +
+                        "To create a bot, type !bot <name> ```lua <code> ```\n";
+
+                    await e.Message.RespondAsync(helpMessage);
+                    
+                } else if (discordMessage.StartsWith("!list")){
+                    // List all bots
+                    String message = "";
+                    foreach (MiniBot miniBot in miniBots)
+                    {
+                        message += miniBot.name + "\n";
+                    }
                     try
                     {
-                        await e.Message.RespondAsync(discordLua.Run(code));
+                        await e.Message.RespondAsync(message);
                     }
                     catch (Exception ex)
                     {
-                        await e.Message.RespondAsync(ex.Message);
+                        Console.WriteLine(ex.Message);
                     }
                 }
                 else
                 {
-                    await e.Message.RespondAsync("Pucko");
+                    // Run all bots with message as input
+                    foreach (MiniBot miniBot in miniBots)
+                    {
+                        try
+                        {
+                            string botOutput = discordLua.Run(miniBot.code, discordMessage);
+                            if (botOutput != ""){
+                                await e.Message.RespondAsync(botOutput);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
+                    }
                 }
 
             };
@@ -79,7 +125,10 @@ namespace MyFirstBot
 
         public string Run(string code, string message = "")
         {
-            object[] luaOutput = lua.DoString(code);
+            Byte[] luaIn = Encoding.UTF8.GetBytes($"message = \"{message}\"\n" + code);
+            // TODO: Escape message
+            // TODO: Handle utf8 output
+            object[] luaOutput = lua.DoString(luaIn);
 
             if (luaOutput.Length > 0)
             {
@@ -90,12 +139,12 @@ namespace MyFirstBot
                 }
                 else
                 {
-                    return "No output";
+                    return "";
                 }
             }
             else
             {
-                return "No output";
+                return "";
             }
 
         }
