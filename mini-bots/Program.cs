@@ -15,7 +15,6 @@ namespace MiniBots
             public string code;
         }
 
-        
         static async Task Main(string[] args)
         {
             string token;
@@ -61,55 +60,71 @@ namespace MiniBots
                     code = code.Replace("```lua", "");
                     code = code.Replace("```", "");
 
-                    // Add bot to list
-                    miniBots.Add(new MiniBot { name = name, code = code });
-                } else if (discordMessage.StartsWith("!help"))
+                    // Update existing bot if new bot with the same name is created
+                    bool miniBotExists = false;
+                    for (int i = 0; i < miniBots.Count; i++)
+                    {
+                        if (miniBots[i].name == name)
+                        {
+                            miniBots[i] = new MiniBot { name = name, code = code };
+                            miniBotExists = true;
+                            break;
+                        }
+                    }
+                    if (!miniBotExists)
+                    {
+                        // Add bot to list
+                        miniBots.Add(new MiniBot { name = name, code = code });
+                    }
+                }
+                else if (discordMessage.StartsWith("!help"))
                 {
                     // Tell user how to use the bot, and limits of the bot
                     String helpMessage = "Mini Bot Help\n" +
-                        "To create a bot, type: ```!bot <name> <3x:`>lua \n<code> \n<3x:`> ```\n" + 
-                        "List bots: !list\n" + 
+                        "To create a bot, type: ```!bot <name> <3x:`>lua \n<code> \n<3x:`> ```\n" +
+                        "List bots: !list\n" +
                         "View help: !help";
 
-                    await e.Message.RespondAsync(helpMessage);
-                    
-                } else if (discordMessage.StartsWith("!list")){
+                    SendDiscordMessage(helpMessage, e);
+
+                }
+                else if (discordMessage.StartsWith("!list"))
+                {
                     // List all bots
                     String message = "";
-                    if (miniBots.Count > 0){
+                    if (miniBots.Count > 0)
+                    {
                         foreach (MiniBot miniBot in miniBots)
                         {
                             message += miniBot.name + "\n";
                         }
-                    } else {
+                    }
+                    else
+                    {
                         message = "No bots running";
                     }
-                    
-                    try
-                    {
-                        await e.Message.RespondAsync(message);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
+
+                    SendDiscordMessage(message, e);
                 }
                 else
                 {
                     // Run all bots with message as input
                     foreach (MiniBot miniBot in miniBots)
                     {
+                        string botOutput = "";
                         try
                         {
-                            string botOutput = discordLua.Run(miniBot.code, discordMessage);
-                            if (botOutput != ""){
-                                await e.Message.RespondAsync(botOutput);
-                            }
+                            botOutput = discordLua.Run(miniBot.code, discordMessage);
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine(ex.Message);
                         }
+                        if (botOutput != "")
+                        {
+                            SendDiscordMessage(botOutput, e);
+                        }
+
                     }
                 }
 
@@ -117,6 +132,18 @@ namespace MiniBots
 
             await discord.ConnectAsync();
             await Task.Delay(-1);
+        }
+
+        public static async void SendDiscordMessage(string message, DSharpPlus.EventArgs.MessageCreateEventArgs e)
+        {
+            try
+            {
+                await e.Message.RespondAsync(message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
     }
 
