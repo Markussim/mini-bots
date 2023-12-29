@@ -10,18 +10,10 @@ namespace MiniBots
 {
     class Program
     {
-        struct MiniBot
-        {
-            public string name;
-            public string code;
-        }
-
         static async Task Main(string[] args)
         {
             string token;
             DiscordLua discordLua = new DiscordLua();
-
-            List<MiniBot> miniBots = new List<MiniBot>();
 
             // Read the token from a file instead of having it in code
             try
@@ -50,39 +42,37 @@ namespace MiniBots
             var commandCreateTable = connection.CreateCommand();
             commandCreateTable.CommandText =
             @"
-                    CREATE TABLE IF NOT EXISTS miniBots (
-                        name TEXT NOT NULL,
-                        code TEXT NOT NULL
-                    );
-                ";
-
+                CREATE TABLE IF NOT EXISTS miniBots (
+                    name TEXT NOT NULL,
+                    code TEXT NOT NULL
+                );
+            ";
             commandCreateTable.ExecuteNonQuery();
 
+            // Add bot-add command
             var commandAddBot = connection.CreateCommand();
             commandAddBot.CommandText =
             @"
-                    INSERT INTO miniBots (name, code)
-                    VALUES ($name, $code);
-                ";
-            commandAddBot.Parameters.AddWithValue("$name", "testname");
-            commandAddBot.Parameters.AddWithValue("$code", "testcode");
-            commandAddBot.ExecuteNonQuery();
+                INSERT INTO miniBots (name, code)
+                VALUES ($name, $code);
+            ";
 
+            // Add bot-replace command
+            var commandRelaceBot = connection.CreateCommand();
+            commandRelaceBot.CommandText =
+            @"
+                UPDATE miniBots
+                SET code = $code
+                WHERE name = $name; 
+            ";
+
+            // Add bot-get command
             var commandGetAllBots = connection.CreateCommand();
             commandGetAllBots.CommandText =
             @"
-                    SELECT name, code
-                    FROM miniBots;
-                ";
-
-            // Test reading from database
-            using (var reader = commandGetAllBots.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    Console.WriteLine($"{reader.GetString(0)} {reader.GetString(1)}");
-                }
-            }
+                SELECT name, code
+                FROM miniBots;
+            ";
 
             discord.MessageCreated += (s, e) =>
             {
@@ -106,19 +96,30 @@ namespace MiniBots
 
                     // Update existing bot if new bot with the same name is created
                     bool miniBotExists = false;
-                    for (int i = 0; i < miniBots.Count; i++)
+                    using (var reader = commandGetAllBots.ExecuteReader())
                     {
-                        if (miniBots[i].name == name)
+                        while (reader.Read())
                         {
-                            miniBots[i] = new MiniBot { name = name, code = code };
-                            miniBotExists = true;
-                            break;
+                            string old_name = reader.GetString(0);
+                            if (old_name == name)
+                            {
+                                commandRelaceBot.Parameters.Clear();
+                                commandRelaceBot.Parameters.AddWithValue("$name", name);
+                                commandRelaceBot.Parameters.AddWithValue("$code", code);
+                                commandRelaceBot.ExecuteNonQuery();
+                                miniBotExists = true;
+                                break;
+                            }
                         }
                     }
+
                     if (!miniBotExists)
                     {
                         // Add bot to list
-                        miniBots.Add(new MiniBot { name = name, code = code });
+                        commandAddBot.Parameters.Clear();
+                        commandAddBot.Parameters.AddWithValue("$name", name);
+                        commandAddBot.Parameters.AddWithValue("$code", code);
+                        commandAddBot.ExecuteNonQuery();
                     }
                 }
                 else if (discordMessage.StartsWith("!help"))
@@ -143,39 +144,31 @@ namespace MiniBots
                             message += "- " + reader.GetString(0) + "\n";
                         }
                     }
-                    // if (miniBots.Count > 0)
-                    // {
-                    //     foreach (MiniBot miniBot in miniBots)
-                    //     {
-                    //         message += "- " + miniBot.name + "\n";
-                    //     }
-                    // }
-                    // else
-                    // {
-                    //     message = "No bots running";
-                    // }
 
                     SendDiscordMessage(message, e);
                 }
                 else
                 {
                     // Run all bots with message as input
-                    foreach (MiniBot miniBot in miniBots)
-                    {
-                        string botOutput = "";
-                        try
-                        {
-                            botOutput = discordLua.Run(miniBot.code, discordMessage);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.Message);
-                        }
-                        if (botOutput != "")
-                        {
-                            SendDiscordMessage(botOutput, e);
-                        }
 
+                    using (var reader = commandGetAllBots.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string botOutput = "";
+                            try
+                            {
+                                botOutput = discordLua.Run(reader.GetString(1), discordMessage);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.Message);
+                            }
+                            if (botOutput != "")
+                            {
+                                SendDiscordMessage(botOutput, e);
+                            }
+                        }
                     }
                 }
 
