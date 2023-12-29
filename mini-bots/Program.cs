@@ -4,6 +4,7 @@ using System.Text;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using NLua;
+using Microsoft.Data.Sqlite;
 
 namespace MiniBots
 {
@@ -15,7 +16,7 @@ namespace MiniBots
             public string code;
         }
 
-        static async void Main(string[] args)
+        static async Task Main(string[] args)
         {
             string token;
             DiscordLua discordLua = new DiscordLua();
@@ -40,6 +41,49 @@ namespace MiniBots
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
             });
 
+            // Open database
+            var connection = new SqliteConnection("Data Source=mini-bots.db");
+
+            connection.Open();
+
+            // Create table if it doesn't exist
+            var commandCreateTable = connection.CreateCommand();
+            commandCreateTable.CommandText =
+            @"
+                    CREATE TABLE IF NOT EXISTS miniBots (
+                        name TEXT NOT NULL,
+                        code TEXT NOT NULL
+                    );
+                ";
+
+            commandCreateTable.ExecuteNonQuery();
+
+            var commandAddBot = connection.CreateCommand();
+            commandAddBot.CommandText =
+            @"
+                    INSERT INTO miniBots (name, code)
+                    VALUES ($name, $code);
+                ";
+            commandAddBot.Parameters.AddWithValue("$name", "testname");
+            commandAddBot.Parameters.AddWithValue("$code", "testcode");
+            commandAddBot.ExecuteNonQuery();
+
+            var commandGetAllBots = connection.CreateCommand();
+            commandGetAllBots.CommandText =
+            @"
+                    SELECT name, code
+                    FROM miniBots;
+                ";
+
+            // Test reading from database
+            using (var reader = commandGetAllBots.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    Console.WriteLine($"{reader.GetString(0)} {reader.GetString(1)}");
+                }
+            }
+
             discord.MessageCreated += (s, e) =>
             {
                 // If message is from bot, ignore
@@ -56,7 +100,7 @@ namespace MiniBots
                     string name = code.Substring(0, codeStartIndex).Trim();
 
                     code = code.Substring(codeStartIndex); // Remove name from code
-                    // Remove code block characters
+                                                           // Remove code block characters
                     code = code.Replace("```lua", "");
                     code = code.Replace("```", "");
 
@@ -92,17 +136,24 @@ namespace MiniBots
                 {
                     // List all bots
                     String message = "Bots: \n";
-                    if (miniBots.Count > 0)
+                    using (var reader = commandGetAllBots.ExecuteReader())
                     {
-                        foreach (MiniBot miniBot in miniBots)
+                        while (reader.Read())
                         {
-                            message += "- " + miniBot.name + "\n";
+                            message += "- " + reader.GetString(0) + "\n";
                         }
                     }
-                    else
-                    {
-                        message = "No bots running";
-                    }
+                    // if (miniBots.Count > 0)
+                    // {
+                    //     foreach (MiniBot miniBot in miniBots)
+                    //     {
+                    //         message += "- " + miniBot.name + "\n";
+                    //     }
+                    // }
+                    // else
+                    // {
+                    //     message = "No bots running";
+                    // }
 
                     SendDiscordMessage(message, e);
                 }
@@ -130,6 +181,7 @@ namespace MiniBots
 
                 return Task.CompletedTask;
             };
+
 
             await discord.ConnectAsync();
             await Task.Delay(-1);
