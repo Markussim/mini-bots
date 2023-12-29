@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using DSharpPlus;
 using NLua;
 using Microsoft.Data.Sqlite;
@@ -63,12 +63,21 @@ namespace MiniBots
                 WHERE name = $name; 
             ";
 
-            // Add bot-get command
+            // Add bots-get command
             var commandGetAllBots = connection.CreateCommand();
             commandGetAllBots.CommandText =
             @"
                 SELECT name, code
                 FROM miniBots;
+            ";
+
+            // Add bot-get command
+            var commandGetBot = connection.CreateCommand();
+            commandGetBot.CommandText =
+            @"
+                SELECT code
+                FROM miniBots
+                WHERE name = $name; 
             ";
 
             discord.MessageCreated += (s, e) =>
@@ -125,6 +134,7 @@ namespace MiniBots
                     String helpMessage = "Mini Bot Help\n" +
                         "To create a bot, type: ```!bot <name> <3x:`>lua \n<code> \n<3x:`> ```\n" +
                         "List bots: !list\n" +
+                        "Get bot code: !get <name>\n" +
                         "View help: !help";
 
                     SendDiscordMessage(helpMessage, e);
@@ -143,6 +153,19 @@ namespace MiniBots
                     }
 
                     SendDiscordMessage(message, e);
+                }
+                else if (discordMessage.StartsWith("!get"))
+                {
+                    string name = discordMessage.Substring(5).Trim();
+                    commandGetBot.Parameters.Clear();
+                    commandGetBot.Parameters.AddWithValue("$name", name);
+                    using (var reader = commandGetBot.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            SendDiscordMessage("```" + reader.GetString(0) + "```", e);
+                        }
+                    }
                 }
                 else
                 {
