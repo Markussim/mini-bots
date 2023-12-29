@@ -15,7 +15,7 @@ namespace MiniBots
             public string code;
         }
 
-        static async Task Main(string[] args)
+        static async void Main(string[] args)
         {
             string token;
             DiscordLua discordLua = new DiscordLua();
@@ -40,10 +40,10 @@ namespace MiniBots
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
             });
 
-            discord.MessageCreated += async (s, e) =>
+            discord.MessageCreated += (s, e) =>
             {
                 // If message is from bot, ignore
-                if (e.Author.IsBot) return;
+                if (e.Author.IsBot) return Task.CompletedTask;
 
                 string discordMessage = e.Message.Content;
 
@@ -53,7 +53,7 @@ namespace MiniBots
                     string code = discordMessage.Substring(5).Trim();
                     int codeStartIndex = code.IndexOf("```");
 
-                    string name = code.Substring(0, codeStartIndex);
+                    string name = code.Substring(0, codeStartIndex).Trim();
 
                     code = code.Substring(codeStartIndex); // Remove name from code
                     // Remove code block characters
@@ -91,12 +91,12 @@ namespace MiniBots
                 else if (discordMessage.StartsWith("!list"))
                 {
                     // List all bots
-                    String message = "";
+                    String message = "Bots: \n";
                     if (miniBots.Count > 0)
                     {
                         foreach (MiniBot miniBot in miniBots)
                         {
-                            message += miniBot.name + "\n";
+                            message += "- " + miniBot.name + "\n";
                         }
                     }
                     else
@@ -128,6 +128,7 @@ namespace MiniBots
                     }
                 }
 
+                return Task.CompletedTask;
             };
 
             await discord.ConnectAsync();
