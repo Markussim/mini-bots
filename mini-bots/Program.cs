@@ -1,8 +1,5 @@
-﻿using System;
-using System.IO; // Need to add this
 using System.Text;
 using DSharpPlus;
-using DSharpPlus.Entities;
 using NLua;
 using Microsoft.Data.Sqlite;
 
