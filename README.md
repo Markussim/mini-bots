@@ -31,7 +31,7 @@ Type the command `!bot <name> \n```lua \n<code> \n``` ` to create a new MiniBot 
 ```
 !bot MyBot
 ```lua
-print('Hello, Discord!')
+return "Hello Discord!"
  ```
 ```
 
