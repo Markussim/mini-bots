@@ -80,6 +80,14 @@ namespace MiniBots
                 WHERE name = $name; 
             ";
 
+            var commandDeleteBot = connection.CreateCommand();
+            commandDeleteBot.CommandText =
+            @"
+                DELETE
+                FROM miniBots
+                WHERE name = $name;
+            ";
+
             discord.MessageCreated += (s, e) =>
             {
                 // If message is from bot, ignore
@@ -166,6 +174,14 @@ namespace MiniBots
                             SendDiscordMessage("```" + reader.GetString(0) + "```", e);
                         }
                     }
+                }
+                else if (discordMessage.StartsWith("!delete"))
+                {
+                    string name = discordMessage.Substring(7).Trim();
+                    commandDeleteBot.Parameters.Clear();
+                    commandDeleteBot.Parameters.AddWithValue("$name", name);
+                    commandDeleteBot.ExecuteNonQuery();
+                    SendDiscordMessage("Deleted: " + name, e);
                 }
                 else
                 {
