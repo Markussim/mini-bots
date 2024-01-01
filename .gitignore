@@ -402,3 +402,6 @@ FodyWeavers.xsd
 
 # Token
 token.txt
+
+# Out folder
+out/
