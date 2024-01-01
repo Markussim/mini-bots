@@ -22,16 +22,18 @@ namespace MiniBots
                 }
                 token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
             }
-
-            // Read the token from a file instead of having it in code
-            try
+            else
             {
-                token = File.ReadAllText("./token.txt").Trim(); // Make sure to update the path to the actual file location
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"Could not read the token file: {ex.Message}");
-                return;
+                // Read the token from a file instead of having it in code
+                try
+                {
+                    token = File.ReadAllText("./token.txt").Trim(); // Make sure to update the path to the actual file location
+                }
+                catch (IOException ex)
+                {
+                    Console.WriteLine($"Could not read the token file: {ex.Message}");
+                    return;
+                }
             }
 
             var discord = new DiscordClient(new DiscordConfiguration()
