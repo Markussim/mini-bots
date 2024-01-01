@@ -28,7 +28,7 @@ Before you can use the MiniBots Discord Bot, make sure you have:
 
 1. Compile and run the bot:
    ```
-   dotnet run dotnet run --volume NAME_OF_VOLUME:/App/Database
+   dotnet run
    ```
 2. Within Discord, you can use the following commands:
 
