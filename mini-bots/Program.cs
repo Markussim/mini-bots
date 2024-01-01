@@ -30,8 +30,10 @@ namespace MiniBots
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
             });
 
+            String databasePath = "./Database/mini-bots.db";
+
             // Open database
-            var connection = new SqliteConnection("Data Source=mini-bots.db");
+            var connection = new SqliteConnection($"Data Source={databasePath}");
 
             connection.Open();
 
