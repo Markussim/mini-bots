@@ -12,6 +12,17 @@ namespace MiniBots
             string token;
             DiscordLua discordLua = new DiscordLua();
 
+            // Read environment variable if file doesn't exist
+            if (!File.Exists("./token.txt"))
+            {
+                if (Environment.GetEnvironmentVariable("DISCORD_TOKEN") == null)
+                {
+                    Console.WriteLine("DISCORD_TOKEN environment variable not set");
+                    return;
+                }
+                token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            }
+
             // Read the token from a file instead of having it in code
             try
             {
