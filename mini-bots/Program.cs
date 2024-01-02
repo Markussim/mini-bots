@@ -1,7 +1,29 @@
 ﻿using System.Text;
 using DSharpPlus;
 using NLua;
-using Microsoft.Data.Sqlite;
+using Watson.ORM.Sqlite;
+using Watson.ORM.Core;
+using ExpressionTree;
+using DatabaseWrapper.Core;
+
+// Apply attributes to your class
+[Table("miniBots")]
+public class MiniBot
+{
+  [Column("id", true, DataTypes.Int, false)]
+  public int Id { get; set; }
+
+  [Column("name", false, DataTypes.Nvarchar, 64, false)]
+  public string Name { get; set; }
+
+  [Column("code", false, DataTypes.Nvarchar, 64, false)]
+  public string Code { get; set; }
+
+  // Parameter-less constructor is required
+  public MiniBot()
+  {
+  }
+}
 
 namespace MiniBots
 {
@@ -43,65 +65,13 @@ namespace MiniBots
                 Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
             });
 
-            String databasePath = "./Database/mini-bots.db";
 
-            // Open database
-            var connection = new SqliteConnection($"Data Source={databasePath}");
-
-            connection.Open();
-
-            // Create table if it doesn't exist
-            var commandCreateTable = connection.CreateCommand();
-            commandCreateTable.CommandText =
-            @"
-                CREATE TABLE IF NOT EXISTS miniBots (
-                    name TEXT NOT NULL,
-                    code TEXT NOT NULL
-                );
-            ";
-            commandCreateTable.ExecuteNonQuery();
-
-            // Add bot-add command
-            var commandAddBot = connection.CreateCommand();
-            commandAddBot.CommandText =
-            @"
-                INSERT INTO miniBots (name, code)
-                VALUES ($name, $code);
-            ";
-
-            // Add bot-replace command
-            var commandRelaceBot = connection.CreateCommand();
-            commandRelaceBot.CommandText =
-            @"
-                UPDATE miniBots
-                SET code = $code
-                WHERE name = $name; 
-            ";
-
-            // Add bots-get command
-            var commandGetAllBots = connection.CreateCommand();
-            commandGetAllBots.CommandText =
-            @"
-                SELECT name, code
-                FROM miniBots;
-            ";
-
-            // Add bot-get command
-            var commandGetBot = connection.CreateCommand();
-            commandGetBot.CommandText =
-            @"
-                SELECT code
-                FROM miniBots
-                WHERE name = $name; 
-            ";
-
-            var commandDeleteBot = connection.CreateCommand();
-            commandDeleteBot.CommandText =
-            @"
-                DELETE
-                FROM miniBots
-                WHERE name = $name;
-            ";
+            // Initialize database
+            string databasePath = "./Database/mini-bots.db";
+            DatabaseSettings settings = new DatabaseSettings(databasePath);
+            WatsonORM orm = new WatsonORM(settings);
+            orm.InitializeDatabase();
+            orm.InitializeTable(typeof(MiniBot));
 
             discord.MessageCreated += (s, e) =>
             {
@@ -125,30 +95,19 @@ namespace MiniBots
 
                     // Update existing bot if new bot with the same name is created
                     bool miniBotExists = false;
-                    using (var reader = commandGetAllBots.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            string old_name = reader.GetString(0);
-                            if (old_name == name)
-                            {
-                                commandRelaceBot.Parameters.Clear();
-                                commandRelaceBot.Parameters.AddWithValue("$name", name);
-                                commandRelaceBot.Parameters.AddWithValue("$code", code);
-                                commandRelaceBot.ExecuteNonQuery();
-                                miniBotExists = true;
-                                break;
-                            }
-                        }
+                    MiniBot? oldMiniBot = GetMiniBotByName(orm, name);
+
+                    if (oldMiniBot != null){
+                        oldMiniBot.Code = code;
+                        orm.Update<MiniBot>(oldMiniBot);
+
+                        miniBotExists = true;
                     }
 
                     if (!miniBotExists)
                     {
-                        // Add bot to list
-                        commandAddBot.Parameters.Clear();
-                        commandAddBot.Parameters.AddWithValue("$name", name);
-                        commandAddBot.Parameters.AddWithValue("$code", code);
-                        commandAddBot.ExecuteNonQuery();
+                        MiniBot miniBot = new MiniBot { Name=name, Code=code };
+                        orm.Insert<MiniBot>(miniBot);
                     }
                 }
                 else if (discordMessage.StartsWith("!help"))
@@ -166,13 +125,15 @@ namespace MiniBots
                 else if (discordMessage.StartsWith("!list"))
                 {
                     // List all bots
+
                     String message = "Bots: \n";
-                    using (var reader = commandGetAllBots.ExecuteReader())
+
+                    // Select all records
+                    List<MiniBot> miniBots = orm.SelectMany<MiniBot>();
+
+                    foreach(MiniBot miniBot in miniBots)
                     {
-                        while (reader.Read())
-                        {
-                            message += "- " + reader.GetString(0) + "\n";
-                        }
+                        message += "- " + miniBot.Name + "\n";
                     }
 
                     SendDiscordMessage(message, e);
@@ -180,45 +141,46 @@ namespace MiniBots
                 else if (discordMessage.StartsWith("!get"))
                 {
                     string name = discordMessage.Substring(5).Trim();
-                    commandGetBot.Parameters.Clear();
-                    commandGetBot.Parameters.AddWithValue("$name", name);
-                    using (var reader = commandGetBot.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            SendDiscordMessage("```" + reader.GetString(0) + "```", e);
-                        }
+
+                    MiniBot? miniBot = GetMiniBotByName(orm, name);
+
+                    if (miniBot != null){
+                        SendDiscordMessage("```" + miniBot.Code + "```", e);
                     }
                 }
                 else if (discordMessage.StartsWith("!delete"))
                 {
                     string name = discordMessage.Substring(7).Trim();
-                    commandDeleteBot.Parameters.Clear();
-                    commandDeleteBot.Parameters.AddWithValue("$name", name);
-                    commandDeleteBot.ExecuteNonQuery();
-                    SendDiscordMessage("Deleted: " + name, e);
+                    MiniBot? miniBot = GetMiniBotByName(orm, name);
+
+                    if (miniBot != null){
+                        orm.Delete<MiniBot>(miniBot);
+                        SendDiscordMessage("Deleted: " + name, e);
+                    }
+                    else{
+                        SendDiscordMessage("No bot with name: " + name, e);
+                    }
                 }
                 else
                 {
                     // Run all bots with message as input
 
-                    using (var reader = commandGetAllBots.ExecuteReader())
-                    {
-                        while (reader.Read())
+                    // Select all records
+                    List<MiniBot> miniBots = orm.SelectMany<MiniBot>();
+
+                    foreach(MiniBot miniBot in miniBots){
+                        string botOutput = "";
+                        try
                         {
-                            string botOutput = "";
-                            try
-                            {
-                                botOutput = discordLua.Run(reader.GetString(1), discordMessage);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.Message);
-                            }
-                            if (botOutput != "")
-                            {
-                                SendDiscordMessage(botOutput, e);
-                            }
+                            botOutput = discordLua.Run(miniBot.Code, discordMessage);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
+                        if (botOutput != "")
+                        {
+                            SendDiscordMessage(botOutput, e);
                         }
                     }
                 }
@@ -229,6 +191,25 @@ namespace MiniBots
 
             await discord.ConnectAsync();
             await Task.Delay(-1);
+        }
+
+        public static MiniBot? GetMiniBotByName(WatsonORM orm, string name){
+            Expr selectFilter = new Expr(
+                orm.GetColumnName<MiniBot>(nameof(MiniBot.Name)),
+                OperatorEnum.Equals,
+                name);
+            // Select all records
+            List<MiniBot> miniBots = orm.SelectMany<MiniBot>(null, null, selectFilter);
+
+            if (miniBots.Count > 1){
+                // This should never happen
+                Console.WriteLine("More than 1 bot with name: " + name);
+            }
+            if (miniBots.Count <= 0){
+                return null;
+            }
+
+            return miniBots[0];
         }
 
         public static async void SendDiscordMessage(string message, DSharpPlus.EventArgs.MessageCreateEventArgs e)
