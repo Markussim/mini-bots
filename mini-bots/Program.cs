@@ -5,6 +5,7 @@ using Watson.ORM.Sqlite;
 using Watson.ORM.Core;
 using ExpressionTree;
 using DatabaseWrapper.Core;
+using System.Net.Http;
 
 // Apply attributes to your class
 [Table("miniBots")]
@@ -225,6 +226,31 @@ namespace MiniBots
         }
     }
 
+    public class HttpManager
+    {
+        public async Task<string> MakeRequest(){
+            // Call asynchronous network methods in a try/catch block to handle exceptions.
+            try
+            {
+                HttpClient httpClient = new HttpClient();
+                using HttpResponseMessage response = await httpClient.GetAsync("https://marksism.space/");
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+                // Above three lines can be replaced with new helper method below
+                // string responseBody = await client.GetStringAsync(uri);
+
+                Console.WriteLine(responseBody);
+                return responseBody;
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+                return "http request failed";
+            }
+        }
+    }
+
     // Lua class
     public class DiscordLua
     {
@@ -238,6 +264,10 @@ namespace MiniBots
         public string Run(string code, string message = "")
         {
             Byte[] luaIn = Encoding.UTF8.GetBytes($"message = \"{message}\"\n" + code);
+
+            HttpManager httpManager = new HttpManager();
+            lua["httpManager"] = httpManager;
+
             // TODO: Escape message
             // TODO: Handle utf8 output
             object[] luaOutput = lua.DoString(luaIn);
