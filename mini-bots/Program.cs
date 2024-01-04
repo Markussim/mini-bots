@@ -228,12 +228,12 @@ namespace MiniBots
 
     public class HttpManager
     {
-        public async Task<string> MakeRequest(){
+        public async Task<string> MakeRequest(string url){
             // Call asynchronous network methods in a try/catch block to handle exceptions.
             try
             {
                 HttpClient httpClient = new HttpClient();
-                using HttpResponseMessage response = await httpClient.GetAsync("https://marksism.space/");
+                using HttpResponseMessage response = await httpClient.GetAsync(url);
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 // Above three lines can be replaced with new helper method below
