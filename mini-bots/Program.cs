@@ -5,24 +5,29 @@ using Watson.ORM.Sqlite;
 using Watson.ORM.Core;
 using ExpressionTree;
 using DatabaseWrapper.Core;
+using System.Net.Http;
+using DSharpPlus.Entities;
 
 // Apply attributes to your class
 [Table("miniBots")]
 public class MiniBot
 {
-  [Column("id", true, DataTypes.Int, false)]
-  public int Id { get; set; }
+    [Column("id", true, DataTypes.Int, false)]
+    public int Id { get; set; }
 
-  [Column("name", false, DataTypes.Nvarchar, 64, false)]
-  public string Name { get; set; }
+    [Column("name", false, DataTypes.Nvarchar, 64, false)]
+    public string Name { get; set; }
 
-  [Column("code", false, DataTypes.Nvarchar, 64, false)]
-  public string Code { get; set; }
+    [Column("code", false, DataTypes.Nvarchar, 64, false)]
+    public string Code { get; set; }
 
-  // Parameter-less constructor is required
-  public MiniBot()
-  {
-  }
+    [Column("storage", false, DataTypes.Nvarchar, 64, false)]
+    public string Storage { get; set; }
+
+    // Parameter-less constructor is required
+    public MiniBot()
+    {
+    }
 }
 
 namespace MiniBots
@@ -97,7 +102,8 @@ namespace MiniBots
                     bool miniBotExists = false;
                     MiniBot? oldMiniBot = GetMiniBotByName(orm, name);
 
-                    if (oldMiniBot != null){
+                    if (oldMiniBot != null)
+                    {
                         oldMiniBot.Code = code;
                         orm.Update<MiniBot>(oldMiniBot);
 
@@ -106,7 +112,7 @@ namespace MiniBots
 
                     if (!miniBotExists)
                     {
-                        MiniBot miniBot = new MiniBot { Name=name, Code=code };
+                        MiniBot miniBot = new MiniBot { Name = name, Code = code, Storage = "" };
                         orm.Insert<MiniBot>(miniBot);
                     }
                 }
@@ -131,7 +137,7 @@ namespace MiniBots
                     // Select all records
                     List<MiniBot> miniBots = orm.SelectMany<MiniBot>();
 
-                    foreach(MiniBot miniBot in miniBots)
+                    foreach (MiniBot miniBot in miniBots)
                     {
                         message += "- " + miniBot.Name + "\n";
                     }
@@ -144,7 +150,8 @@ namespace MiniBots
 
                     MiniBot? miniBot = GetMiniBotByName(orm, name);
 
-                    if (miniBot != null){
+                    if (miniBot != null)
+                    {
                         SendDiscordMessage("```" + miniBot.Code + "```", e);
                     }
                 }
@@ -153,11 +160,13 @@ namespace MiniBots
                     string name = discordMessage.Substring(7).Trim();
                     MiniBot? miniBot = GetMiniBotByName(orm, name);
 
-                    if (miniBot != null){
+                    if (miniBot != null)
+                    {
                         orm.Delete<MiniBot>(miniBot);
                         SendDiscordMessage("Deleted: " + name, e);
                     }
-                    else{
+                    else
+                    {
                         SendDiscordMessage("No bot with name: " + name, e);
                     }
                 }
@@ -168,11 +177,12 @@ namespace MiniBots
                     // Select all records
                     List<MiniBot> miniBots = orm.SelectMany<MiniBot>();
 
-                    foreach(MiniBot miniBot in miniBots){
+                    foreach (MiniBot miniBot in miniBots)
+                    {
                         string botOutput = "";
                         try
                         {
-                            botOutput = discordLua.Run(miniBot.Code, discordMessage);
+                            botOutput = discordLua.Run(miniBot.Id, miniBot.Code, e.Message, orm);
                         }
                         catch (Exception ex)
                         {
@@ -193,7 +203,8 @@ namespace MiniBots
             await Task.Delay(-1);
         }
 
-        public static MiniBot? GetMiniBotByName(WatsonORM orm, string name){
+        public static MiniBot? GetMiniBotByName(WatsonORM orm, string name)
+        {
             Expr selectFilter = new Expr(
                 orm.GetColumnName<MiniBot>(nameof(MiniBot.Name)),
                 OperatorEnum.Equals,
@@ -201,11 +212,13 @@ namespace MiniBots
             // Select all records
             List<MiniBot> miniBots = orm.SelectMany<MiniBot>(null, null, selectFilter);
 
-            if (miniBots.Count > 1){
+            if (miniBots.Count > 1)
+            {
                 // This should never happen
                 Console.WriteLine("More than 1 bot with name: " + name);
             }
-            if (miniBots.Count <= 0){
+            if (miniBots.Count <= 0)
+            {
                 return null;
             }
 
@@ -235,10 +248,14 @@ namespace MiniBots
             lua = new Lua();
         }
 
-        public string Run(string code, string message = "")
+        public string Run(int id, string code, DiscordMessage message, WatsonORM orm)
         {
-            Byte[] luaIn = Encoding.UTF8.GetBytes($"message = \"{message}\"\n" + code);
-            // TODO: Escape message
+            lua["messageManager"] = new MessageManager(message);
+            lua["timeManager"] = new TimeManager();
+            lua["storageManager"] = new StorageManager(orm, id);
+
+            Byte[] luaIn = Encoding.UTF8.GetBytes(code);
+
             // TODO: Handle utf8 output
             object[] luaOutput = lua.DoString(luaIn);
 
