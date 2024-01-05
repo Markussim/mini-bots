@@ -6,6 +6,7 @@ using Watson.ORM.Core;
 using ExpressionTree;
 using DatabaseWrapper.Core;
 using System.Net.Http;
+using DSharpPlus.Entities;
 
 // Apply attributes to your class
 [Table("miniBots")]
@@ -178,7 +179,7 @@ namespace MiniBots
                         string botOutput = "";
                         try
                         {
-                            botOutput = discordLua.Run(miniBot.Code, discordMessage);
+                            botOutput = discordLua.Run(miniBot.Code, e.Message);
                         }
                         catch (Exception ex)
                         {
@@ -270,14 +271,15 @@ namespace MiniBots
             lua = new Lua();
         }
 
-        public string Run(string code, string message = "")
+        public string Run(string code, DiscordMessage message)
         {
-            Byte[] luaIn = Encoding.UTF8.GetBytes($"message = \"{message}\"\n" + code);
+            lua["messageManager"] = new MessageManager(message);
+            lua["httpManager"] = new HttpManager();
+            lua["timeManager"] = new TimeManager();
 
-            HttpManager httpManager = new HttpManager();
-            lua["httpManager"] = httpManager;
 
-            // TODO: Escape message
+            Byte[] luaIn = Encoding.UTF8.GetBytes(code);
+
             // TODO: Handle utf8 output
             object[] luaOutput = lua.DoString(luaIn);
 
