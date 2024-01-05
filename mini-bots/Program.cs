@@ -21,6 +21,9 @@ public class MiniBot
     [Column("code", false, DataTypes.Nvarchar, 64, false)]
     public string Code { get; set; }
 
+    [Column("storage", false, DataTypes.Nvarchar, 64, false)]
+    public string Storage { get; set; }
+
     // Parameter-less constructor is required
     public MiniBot()
     {
@@ -109,7 +112,7 @@ namespace MiniBots
 
                     if (!miniBotExists)
                     {
-                        MiniBot miniBot = new MiniBot { Name = name, Code = code };
+                        MiniBot miniBot = new MiniBot { Name = name, Code = code, Storage = "" };
                         orm.Insert<MiniBot>(miniBot);
                     }
                 }
@@ -179,7 +182,7 @@ namespace MiniBots
                         string botOutput = "";
                         try
                         {
-                            botOutput = discordLua.Run(miniBot.Code, e.Message);
+                            botOutput = discordLua.Run(miniBot.Id, miniBot.Code, e.Message, orm);
                         }
                         catch (Exception ex)
                         {
@@ -271,12 +274,12 @@ namespace MiniBots
             lua = new Lua();
         }
 
-        public string Run(string code, DiscordMessage message)
+        public string Run(int id, string code, DiscordMessage message, WatsonORM orm)
         {
             lua["messageManager"] = new MessageManager(message);
             lua["httpManager"] = new HttpManager();
             lua["timeManager"] = new TimeManager();
-
+            lua["storageManager"] = new StorageManager(orm, id);
 
             Byte[] luaIn = Encoding.UTF8.GetBytes(code);
 
