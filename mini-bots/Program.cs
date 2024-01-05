@@ -238,32 +238,6 @@ namespace MiniBots
         }
     }
 
-    public class HttpManager
-    {
-        public async Task<string> MakeRequest(string url)
-        {
-            // Call asynchronous network methods in a try/catch block to handle exceptions.
-            try
-            {
-                HttpClient httpClient = new HttpClient();
-                using HttpResponseMessage response = await httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-                string responseBody = await response.Content.ReadAsStringAsync();
-                // Above three lines can be replaced with new helper method below
-                // string responseBody = await client.GetStringAsync(uri);
-
-                Console.WriteLine(responseBody);
-                return responseBody;
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", e.Message);
-                return "http request failed";
-            }
-        }
-    }
-
     // Lua class
     public class DiscordLua
     {
@@ -277,7 +251,6 @@ namespace MiniBots
         public string Run(int id, string code, DiscordMessage message, WatsonORM orm)
         {
             lua["messageManager"] = new MessageManager(message);
-            lua["httpManager"] = new HttpManager();
             lua["timeManager"] = new TimeManager();
             lua["storageManager"] = new StorageManager(orm, id);
 
