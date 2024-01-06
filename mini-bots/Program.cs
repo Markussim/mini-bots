@@ -1,32 +1,6 @@
-﻿using System.Text;
-using DSharpPlus;
-using NLua;
+﻿using DSharpPlus;
 using Watson.ORM.Sqlite;
-using Watson.ORM.Core;
 using DatabaseWrapper.Core;
-using DSharpPlus.Entities;
-
-// Apply attributes to your class
-[Table("miniBots")]
-public class MiniBot
-{
-    [Column("id", true, DataTypes.Int, false)]
-    public int Id { get; set; }
-
-    [Column("name", false, DataTypes.Nvarchar, 64, false)]
-    public string Name { get; set; }
-
-    [Column("code", false, DataTypes.Nvarchar, 64, false)]
-    public string Code { get; set; }
-
-    [Column("storage", false, DataTypes.Nvarchar, 64, false)]
-    public string Storage { get; set; }
-
-    // Parameter-less constructor is required
-    public MiniBot()
-    {
-    }
-}
 
 namespace MiniBots
 {
@@ -148,46 +122,5 @@ namespace MiniBots
             return discord;
         }
 
-    }
-
-    // Lua class
-    public class DiscordLua
-    {
-        private Lua _lua;
-
-        public DiscordLua()
-        {
-            _lua = new Lua();
-        }
-
-        public string Run(int id, string code, DiscordMessage message, WatsonORM orm)
-        {
-            _lua["messageManager"] = new MessageManager(message);
-            _lua["timeManager"] = new TimeManager();
-            _lua["storageManager"] = new StorageManager(orm, id);
-
-            Byte[] luaIn = Encoding.UTF8.GetBytes(code);
-
-            // TODO: Handle utf8 output
-            object[] luaOutput = _lua.DoString(luaIn);
-
-            if (luaOutput.Length > 0)
-            {
-                var stringOut = luaOutput[0].ToString();
-                if (stringOut != null)
-                {
-                    return stringOut;
-                }
-                else
-                {
-                    return "";
-                }
-            }
-            else
-            {
-                return "";
-            }
-
-        }
     }
 }
