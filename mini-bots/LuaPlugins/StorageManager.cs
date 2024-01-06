@@ -1,6 +1,8 @@
+using MiniBots;
 using Watson.ORM.Sqlite;
 
-namespace MiniBots
+
+namespace LuaPlugins
 {
     public class StorageManager
     {

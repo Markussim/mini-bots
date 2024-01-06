@@ -1,9 +1,11 @@
 using System.Text;
 using DSharpPlus.Entities;
+using LuaPlugins;
 using NLua;
 using Watson.ORM.Sqlite;
 
-namespace MiniBots
+
+namespace LuaManagement
 {
     public class DiscordLua
     {

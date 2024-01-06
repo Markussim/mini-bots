@@ -1,6 +1,6 @@
 using DSharpPlus.Entities;
 
-namespace MiniBots
+namespace LuaPlugins
 {
     public class MessageManager
     {
