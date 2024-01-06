@@ -29,4 +29,3 @@ jobs:
           tags: |
             ghcr.io/markussim/mini-bots:latest
             ghcr.io/markussim/mini-bots:${{ github.sha }}
-          platforms: linux/arm64
