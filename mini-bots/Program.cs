@@ -1,6 +1,5 @@
 ﻿using DSharpPlus;
-using Watson.ORM.Sqlite;
-using DatabaseWrapper.Core;
+using DSharpPlus.SlashCommands;
 using LuaManagement;
 
 namespace MiniBots
@@ -13,8 +12,11 @@ namespace MiniBots
             DiscordLua discordLua = new DiscordLua();
 
             var discord = GetDiscordClient(token);
+            var slash = discord.UseSlashCommands();
+            slash.RegisterCommands<SlashCommands>(554977304665784325);
 
-            WatsonORM orm = GetORM();
+            // Create the database connection
+            DatabaseManager databaseManager = new DatabaseManager();
 
             discord.MessageCreated += (s, e) =>
             {
@@ -30,31 +32,14 @@ namespace MiniBots
                     // Extract command
                     string command = discordMessage.Substring(prefix.Length).Split(" ")[0];
 
-                    switch (command)
-                    {
-                        case "help":
-                            Commands.Help(e);
-                            break;
-                        case "list":
-                            Commands.ListBots(e, orm);
-                            break;
-                        case "get":
-                            Commands.GetBotCode(e, orm);
-                            break;
-                        case "delete":
-                            Commands.DeleteBot(e, orm);
-                            break;
-                        case "bot":
-                            Commands.CreateBot(e, orm);
-                            break;
-                        default:
-                            break;
+                    if(command == "bot") {
+                        Commands.CreateBot(e, databaseManager);
                     }
 
                 }
                 else
                 {
-                    Commands.RunBot(e, orm, discordLua);
+                    Commands.RunBot(e, databaseManager, discordLua);
                 }
 
                 return Task.CompletedTask;
@@ -98,17 +83,7 @@ namespace MiniBots
             }
         }
 
-        private static WatsonORM GetORM()
-        {
-            string databasePath = "./Database/mini-bots.db";
-            DatabaseSettings settings = new DatabaseSettings(databasePath);
-            WatsonORM orm = new WatsonORM(settings);
-            orm.InitializeDatabase();
-            orm.InitializeTable(typeof(MiniBot));
-
-            return orm;
-        }
-
+        
         private static DiscordClient GetDiscordClient(string token)
         {
             DiscordClient discord = new DiscordClient(new DiscordConfiguration()
