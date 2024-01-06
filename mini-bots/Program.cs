@@ -3,7 +3,6 @@ using DSharpPlus;
 using NLua;
 using Watson.ORM.Sqlite;
 using Watson.ORM.Core;
-using ExpressionTree;
 using DatabaseWrapper.Core;
 using DSharpPlus.Entities;
 
@@ -35,47 +34,12 @@ namespace MiniBots
     {
         static async Task Main(string[] args)
         {
-            string token;
+            string token = GetToken();
             DiscordLua discordLua = new DiscordLua();
 
-            // Read environment variable if file doesn't exist
-            if (!File.Exists("./token.txt"))
-            {
-                if (Environment.GetEnvironmentVariable("DISCORD_TOKEN") == null)
-                {
-                    Console.WriteLine("DISCORD_TOKEN environment variable not set");
-                    return;
-                }
-                token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-            }
-            else
-            {
-                // Read the token from a file instead of having it in code
-                try
-                {
-                    token = File.ReadAllText("./token.txt").Trim(); // Make sure to update the path to the actual file location
-                }
-                catch (IOException ex)
-                {
-                    Console.WriteLine($"Could not read the token file: {ex.Message}");
-                    return;
-                }
-            }
+            var discord = GetDiscordClient(token);
 
-            var discord = new DiscordClient(new DiscordConfiguration()
-            {
-                Token = token,
-                TokenType = TokenType.Bot,
-                Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
-            });
-
-
-            // Initialize database
-            string databasePath = "./Database/mini-bots.db";
-            DatabaseSettings settings = new DatabaseSettings(databasePath);
-            WatsonORM orm = new WatsonORM(settings);
-            orm.InitializeDatabase();
-            orm.InitializeTable(typeof(MiniBot));
+            WatsonORM orm = GetORM();
 
             discord.MessageCreated += (s, e) =>
             {
@@ -126,6 +90,64 @@ namespace MiniBots
 
             await discord.ConnectAsync();
             await Task.Delay(-1);
+        }
+
+        private static string GetToken()
+        {
+            string token;
+            // Read environment variable if file doesn't exist
+            if (!File.Exists("./token.txt"))
+            {
+                if (Environment.GetEnvironmentVariable("DISCORD_TOKEN") == null)
+                {
+                    Console.WriteLine("DISCORD_TOKEN environment variable not set");
+                    return null;
+                }
+                token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            }
+            else
+            {
+                // Read the token from a file instead of having it in code
+                try
+                {
+                    token = File.ReadAllText("./token.txt").Trim(); // Make sure to update the path to the actual file location
+                }
+                catch (IOException ex)
+                {
+                    Console.WriteLine($"Could not read the token file: {ex.Message}");
+                    return null;
+                }
+            }
+
+            if (token == null)
+            {
+                throw new Exception("Token is null");
+            }
+
+            return token;
+        }
+
+        private static WatsonORM GetORM()
+        {
+            string databasePath = "./Database/mini-bots.db";
+            DatabaseSettings settings = new DatabaseSettings(databasePath);
+            WatsonORM orm = new WatsonORM(settings);
+            orm.InitializeDatabase();
+            orm.InitializeTable(typeof(MiniBot));
+
+            return orm;
+        }
+
+        private static DiscordClient GetDiscordClient(string token)
+        {
+            var discord = new DiscordClient(new DiscordConfiguration()
+            {
+                Token = token,
+                TokenType = TokenType.Bot,
+                Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
+            });
+
+            return discord;
         }
 
     }
