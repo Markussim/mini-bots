@@ -55,8 +55,6 @@ namespace MiniBots
                     // Extract command
                     string command = discordMessage.Substring(prefix.Length).Split(" ")[0];
 
-                    Console.WriteLine("Command: " + command);
-
                     switch (command)
                     {
                         case "help":
