@@ -4,18 +4,18 @@ namespace MiniBots
 {
     public class MessageManager
     {
-        public string content { get; }
-        public string authorId { get; }
-        public string authorUsername { get; }
-        public string channel { get; }
+        public string Content { get; }
+        public string AuthorId { get; }
+        public string AuthorUsername { get; }
+        public string Channel { get; }
 
 
         public MessageManager(DiscordMessage discordMessage)
         {
-            content = discordMessage.Content;
-            authorId = discordMessage.Author.Id.ToString();
-            authorUsername = discordMessage.Author.Username;
-            channel = discordMessage.Channel.Name;
+            Content = discordMessage.Content;
+            AuthorId = discordMessage.Author.Id.ToString();
+            AuthorUsername = discordMessage.Author.Username;
+            Channel = discordMessage.Channel.Name;
         }
     }
 

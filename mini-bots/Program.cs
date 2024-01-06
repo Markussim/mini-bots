@@ -241,23 +241,23 @@ namespace MiniBots
     // Lua class
     public class DiscordLua
     {
-        private Lua lua;
+        private Lua _lua;
 
         public DiscordLua()
         {
-            lua = new Lua();
+            _lua = new Lua();
         }
 
         public string Run(int id, string code, DiscordMessage message, WatsonORM orm)
         {
-            lua["messageManager"] = new MessageManager(message);
-            lua["timeManager"] = new TimeManager();
-            lua["storageManager"] = new StorageManager(orm, id);
+            _lua["messageManager"] = new MessageManager(message);
+            _lua["timeManager"] = new TimeManager();
+            _lua["storageManager"] = new StorageManager(orm, id);
 
             Byte[] luaIn = Encoding.UTF8.GetBytes(code);
 
             // TODO: Handle utf8 output
-            object[] luaOutput = lua.DoString(luaIn);
+            object[] luaOutput = _lua.DoString(luaIn);
 
             if (luaOutput.Length > 0)
             {
