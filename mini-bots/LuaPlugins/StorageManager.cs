@@ -1,12 +1,11 @@
 using MiniBots;
-using Watson.ORM.Sqlite;
 
 
 namespace LuaPlugins
 {
     public class StorageManager
     {
-        private WatsonORM Orm { get; }
+        private DatabaseManager _databaseManager;
         private readonly int _id;
         /// <summary>
         ///   Replace the data in the storage with the given data.
@@ -17,10 +16,7 @@ namespace LuaPlugins
         /// </remarks>
         public void ReplaceData(string data)
         {
-            MiniBot miniBot = Orm.SelectByPrimaryKey<MiniBot>(_id);
-
-            miniBot.Storage = data;
-            Orm.Update<MiniBot>(miniBot);
+            _databaseManager.SetStorage(_id, data, false);
         }
         /// <summary>
         ///  Append the given data to the storage.
@@ -28,10 +24,7 @@ namespace LuaPlugins
         /// <param name="data"></param>
         public void AppendData(string data)
         {
-            MiniBot miniBot = Orm.SelectByPrimaryKey<MiniBot>(_id);
-
-            miniBot.Storage += data;
-            Orm.Update<MiniBot>(miniBot);
+            _databaseManager.SetStorage(_id, data, true);
         }
         /// <summary>
         ///  Get the data in the storage.
@@ -39,14 +32,12 @@ namespace LuaPlugins
         ///  <param name="data"></param>
         public string GetData()
         {
-            MiniBot miniBot = Orm.SelectByPrimaryKey<MiniBot>(_id);
-
-            return miniBot.Storage;
+            return _databaseManager.GetStorage(_id);
         }
 
-        public StorageManager(WatsonORM orm, int id)
+        public StorageManager(DatabaseManager databaseManager, int id)
         {
-            Orm = orm;
+            _databaseManager = databaseManager;
             _id = id;
         }
     }

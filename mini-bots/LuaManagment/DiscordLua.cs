@@ -1,8 +1,8 @@
 using System.Text;
 using DSharpPlus.Entities;
 using LuaPlugins;
+using MiniBots;
 using NLua;
-using Watson.ORM.Sqlite;
 
 
 namespace LuaManagement
@@ -16,11 +16,11 @@ namespace LuaManagement
             _lua = new Lua();
         }
 
-        public string Run(int id, string code, DiscordMessage message, WatsonORM orm)
+        public string Run(int id, string code, DiscordMessage message, DatabaseManager databaseManager)
         {
             _lua["messageManager"] = new MessageManager(message);
             _lua["timeManager"] = new TimeManager();
-            _lua["storageManager"] = new StorageManager(orm, id);
+            _lua["storageManager"] = new StorageManager(databaseManager, id);
 
             Byte[] luaIn = Encoding.UTF8.GetBytes(code);
 
