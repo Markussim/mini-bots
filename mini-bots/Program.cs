@@ -5,7 +5,6 @@ using Watson.ORM.Sqlite;
 using Watson.ORM.Core;
 using ExpressionTree;
 using DatabaseWrapper.Core;
-using System.Net.Http;
 using DSharpPlus.Entities;
 
 // Apply attributes to your class
@@ -85,90 +84,36 @@ namespace MiniBots
 
                 string discordMessage = e.Message.Content;
 
+                string prefix = "!";
 
-                if (discordMessage.StartsWith("!bot"))
+                if (discordMessage.StartsWith(prefix))
                 {
-                    string code = discordMessage.Substring(5).Trim();
-                    int codeStartIndex = code.IndexOf("```");
+                    // Extract command
+                    string command = discordMessage.Substring(prefix.Length).Split(" ")[0];
 
-                    string name = code.Substring(0, codeStartIndex).Trim();
+                    Console.WriteLine("Command: " + command);
 
-                    code = code.Substring(codeStartIndex); // Remove name from code
-                                                           // Remove code block characters
-                    code = code.Replace("```lua", "");
-                    code = code.Replace("```", "");
-
-                    // Update existing bot if new bot with the same name is created
-                    bool miniBotExists = false;
-                    MiniBot? oldMiniBot = GetMiniBotByName(orm, name);
-
-                    if (oldMiniBot != null)
+                    switch (command)
                     {
-                        oldMiniBot.Code = code;
-                        orm.Update<MiniBot>(oldMiniBot);
-
-                        miniBotExists = true;
+                        case "help":
+                            Help(e);
+                            break;
+                        case "list":
+                            ListBots(e, orm);
+                            break;
+                        case "get":
+                            GetBotCode(e, orm);
+                            break;
+                        case "delete":
+                            DeleteBot(e, orm);
+                            break;
+                        case "bot":
+                            CreateBot(e, orm);
+                            break;
+                        default:
+                            break;
                     }
 
-                    if (!miniBotExists)
-                    {
-                        MiniBot miniBot = new MiniBot { Name = name, Code = code, Storage = "" };
-                        orm.Insert<MiniBot>(miniBot);
-                    }
-                }
-                else if (discordMessage.StartsWith("!help"))
-                {
-                    // Tell user how to use the bot, and limits of the bot
-                    String helpMessage = "Mini Bot Help\n" +
-                        "To create a bot, type: ```!bot <name> <3x:`>lua \n<code> \n<3x:`> ```\n" +
-                        "List bots: !list\n" +
-                        "Get bot code: !get <name>\n" +
-                        "View help: !help";
-
-                    SendDiscordMessage(helpMessage, e);
-
-                }
-                else if (discordMessage.StartsWith("!list"))
-                {
-                    // List all bots
-
-                    String message = "Bots: \n";
-
-                    // Select all records
-                    List<MiniBot> miniBots = orm.SelectMany<MiniBot>();
-
-                    foreach (MiniBot miniBot in miniBots)
-                    {
-                        message += "- " + miniBot.Name + "\n";
-                    }
-
-                    SendDiscordMessage(message, e);
-                }
-                else if (discordMessage.StartsWith("!get"))
-                {
-                    string name = discordMessage.Substring(5).Trim();
-
-                    MiniBot? miniBot = GetMiniBotByName(orm, name);
-
-                    if (miniBot != null)
-                    {
-                        SendDiscordMessage("```" + miniBot.Code + "```", e);
-                    }
-                }
-                else if (discordMessage.StartsWith("!delete"))
-                {
-                    string name = discordMessage.Substring(7).Trim();
-                    MiniBot? miniBot = GetMiniBotByName(orm, name);
-
-                    if (miniBot != null)
-                    {
-                        orm.Delete<MiniBot>(miniBot);
-                        SendDiscordMessage("Deleted: " + name, e);
-                    }
-                    else
-                    {
-                        SendDiscordMessage("No bot with name: " + name, e);
-                    }
                 }
                 else
                 {
@@ -201,6 +146,96 @@ namespace MiniBots
 
             await discord.ConnectAsync();
             await Task.Delay(-1);
+        }
+
+        private static void CreateBot(DSharpPlus.EventArgs.MessageCreateEventArgs e, WatsonORM orm)
+        {
+            Console.WriteLine("Creating bot");
+
+            string code = e.Message.Content.Substring(5).Trim();
+            int codeStartIndex = code.IndexOf("```");
+
+            string name = code.Substring(0, codeStartIndex).Trim();
+
+            code = code.Substring(codeStartIndex); // Remove name from code
+                                                   // Remove code block characters
+            code = code.Replace("```lua", "");
+            code = code.Replace("```", "");
+
+            // Update existing bot if new bot with the same name is created
+            bool miniBotExists = false;
+            MiniBot? oldMiniBot = GetMiniBotByName(orm, name);
+
+            if (oldMiniBot != null)
+            {
+                oldMiniBot.Code = code;
+                orm.Update<MiniBot>(oldMiniBot);
+
+                miniBotExists = true;
+            }
+
+            if (!miniBotExists)
+            {
+                MiniBot miniBot = new MiniBot { Name = name, Code = code, Storage = "" };
+                orm.Insert<MiniBot>(miniBot);
+            }
+        }
+
+        private static void Help(DSharpPlus.EventArgs.MessageCreateEventArgs e)
+        {
+            // Tell user how to use the bot, and limits of the bot
+            String helpMessage = "Mini Bot Help\n" +
+                "To create a bot, type: ```!bot <name> <3x:`>lua \n<code> \n<3x:`> ```\n" +
+                "List bots: !list\n" +
+                "Get bot code: !get <name>\n" +
+                "View help: !help";
+
+            SendDiscordMessage(helpMessage, e);
+        }
+
+        private static void ListBots(DSharpPlus.EventArgs.MessageCreateEventArgs e, WatsonORM orm)
+        {
+            // List all bots
+
+            String message = "Bots: \n";
+
+            // Select all records
+            List<MiniBot> miniBots = orm.SelectMany<MiniBot>();
+
+            foreach (MiniBot miniBot in miniBots)
+            {
+                message += "- " + miniBot.Name + "\n";
+            }
+
+            SendDiscordMessage(message, e);
+        }
+
+        private static void GetBotCode(DSharpPlus.EventArgs.MessageCreateEventArgs e, WatsonORM orm)
+        {
+            string name = e.Message.Content.Substring(5).Trim();
+
+            MiniBot? miniBot = GetMiniBotByName(orm, name);
+
+            if (miniBot != null)
+            {
+                SendDiscordMessage("```" + miniBot.Code + "```", e);
+            }
+        }
+
+        private static void DeleteBot(DSharpPlus.EventArgs.MessageCreateEventArgs e, WatsonORM orm)
+        {
+            string name = e.Message.Content.Substring(7).Trim();
+            MiniBot? miniBot = GetMiniBotByName(orm, name);
+
+            if (miniBot != null)
+            {
+                orm.Delete<MiniBot>(miniBot);
+                SendDiscordMessage("Deleted: " + name, e);
+            }
+            else
+            {
+                SendDiscordMessage("No bot with name: " + name, e);
+            }
         }
 
         public static MiniBot? GetMiniBotByName(WatsonORM orm, string name)
