@@ -78,7 +78,7 @@ namespace MiniBots
                 }
                 else
                 {
-                    token = envToken;
+                    return envToken;
                 }
             }
             else
@@ -87,6 +87,7 @@ namespace MiniBots
                 try
                 {
                     token = File.ReadAllText("./token.txt").Trim(); // Make sure to update the path to the actual file location
+                    return token;
                 }
                 catch (IOException ex)
                 {
@@ -94,13 +95,6 @@ namespace MiniBots
                     throw;
                 }
             }
-
-            if (token == null)
-            {
-                throw new Exception("Token not set");
-            }
-
-            return token;
         }
 
         private static WatsonORM GetORM()
