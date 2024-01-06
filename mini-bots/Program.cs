@@ -70,12 +70,16 @@ namespace MiniBots
             // Read environment variable if file doesn't exist
             if (!File.Exists("./token.txt"))
             {
-                if (Environment.GetEnvironmentVariable("DISCORD_TOKEN") == null)
+                string? envToken = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+
+                if (envToken == null)
                 {
-                    Console.WriteLine("DISCORD_TOKEN environment variable not set");
-                    return null;
+                    throw new Exception("DISCORD_TOKEN environment variable not set");
                 }
-                token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+                else
+                {
+                    token = envToken;
+                }
             }
             else
             {
@@ -87,13 +91,13 @@ namespace MiniBots
                 catch (IOException ex)
                 {
                     Console.WriteLine($"Could not read the token file: {ex.Message}");
-                    return null;
+                    throw;
                 }
             }
 
             if (token == null)
             {
-                throw new Exception("Token is null");
+                throw new Exception("Token not set");
             }
 
             return token;
@@ -112,7 +116,7 @@ namespace MiniBots
 
         private static DiscordClient GetDiscordClient(string token)
         {
-            var discord = new DiscordClient(new DiscordConfiguration()
+            DiscordClient discord = new DiscordClient(new DiscordConfiguration()
             {
                 Token = token,
                 TokenType = TokenType.Bot,
