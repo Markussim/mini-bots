@@ -1,0 +1,72 @@
+# .editorconfig for C# Naming Conventions
+
+# Top-most EditorConfig file
+root = true
+
+# C# files
+[*.cs]
+
+# Naming styles
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+dotnet_naming_style.camel_case.capitalization = camel_case
+dotnet_naming_style.private_field_prefix.capitalization = camel_case
+dotnet_naming_style.private_field_prefix.required_prefix = _
+
+# Symbol specifications
+## Classes, Structs
+dotnet_naming_symbols.named_types.applicable_kinds = class, struct
+dotnet_naming_symbols.named_types.applicable_accessibilities = *
+
+## Interfaces
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = *
+dotnet_naming_symbols.interfaces.required_prefix = I
+
+## Methods
+dotnet_naming_symbols.methods.applicable_kinds = method
+dotnet_naming_symbols.methods.applicable_accessibilities = *
+
+## Fields
+### Private Fields
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+### Public/Internal/Protected Fields
+dotnet_naming_symbols.public_internal_protected_fields.applicable_kinds = field
+dotnet_naming_symbols.public_internal_protected_fields.applicable_accessibilities = public, internal, protected
+
+## Properties
+dotnet_naming_symbols.properties.applicable_kinds = property
+dotnet_naming_symbols.properties.applicable_accessibilities = *
+
+# Naming rules
+## Classes, Structs
+dotnet_naming_rule.named_types_should_be_pascal_case.severity = warning
+dotnet_naming_rule.named_types_should_be_pascal_case.symbols = named_types
+dotnet_naming_rule.named_types_should_be_pascal_case.style = pascal_case
+
+## Interfaces
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.severity = warning
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.symbols = interfaces
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.style = pascal_case
+
+## Methods
+dotnet_naming_rule.methods_should_be_pascal_case.severity = warning
+dotnet_naming_rule.methods_should_be_pascal_case.symbols = methods
+dotnet_naming_rule.methods_should_be_pascal_case.style = pascal_case
+
+## Fields
+### Private Fields
+dotnet_naming_rule.private_fields_should_be_prefixed_with_underscore.severity = warning
+dotnet_naming_rule.private_fields_should_be_prefixed_with_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_should_be_prefixed_with_underscore.style = private_field_prefix
+
+### Public/Internal/Protected Fields
+dotnet_naming_rule.public_internal_protected_fields_should_be_pascal_case.severity = warning
+dotnet_naming_rule.public_internal_protected_fields_should_be_pascal_case.symbols = public_internal_protected_fields
+dotnet_naming_rule.public_internal_protected_fields_should_be_pascal_case.style = pascal_case
+
+## Properties
+dotnet_naming_rule.properties_should_be_pascal_case.severity = warning
+dotnet_naming_rule.properties_should_be_pascal_case.symbols = properties
+dotnet_naming_rule.properties_should_be_pascal_case.style = pascal_case

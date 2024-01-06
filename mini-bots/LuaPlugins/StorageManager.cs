@@ -1,11 +1,13 @@
+using MiniBots;
 using Watson.ORM.Sqlite;
 
-namespace MiniBots
+
+namespace LuaPlugins
 {
     public class StorageManager
     {
         private WatsonORM Orm { get; }
-        private readonly int Id;
+        private readonly int _id;
         /// <summary>
         ///   Replace the data in the storage with the given data.
         /// </summary>
@@ -15,7 +17,7 @@ namespace MiniBots
         /// </remarks>
         public void ReplaceData(string data)
         {
-            MiniBot miniBot = Orm.SelectByPrimaryKey<MiniBot>(Id);
+            MiniBot miniBot = Orm.SelectByPrimaryKey<MiniBot>(_id);
 
             miniBot.Storage = data;
             Orm.Update<MiniBot>(miniBot);
@@ -26,7 +28,7 @@ namespace MiniBots
         /// <param name="data"></param>
         public void AppendData(string data)
         {
-            MiniBot miniBot = Orm.SelectByPrimaryKey<MiniBot>(Id);
+            MiniBot miniBot = Orm.SelectByPrimaryKey<MiniBot>(_id);
 
             miniBot.Storage += data;
             Orm.Update<MiniBot>(miniBot);
@@ -37,7 +39,7 @@ namespace MiniBots
         ///  <param name="data"></param>
         public string GetData()
         {
-            MiniBot miniBot = Orm.SelectByPrimaryKey<MiniBot>(Id);
+            MiniBot miniBot = Orm.SelectByPrimaryKey<MiniBot>(_id);
 
             return miniBot.Storage;
         }
@@ -45,7 +47,7 @@ namespace MiniBots
         public StorageManager(WatsonORM orm, int id)
         {
             Orm = orm;
-            Id = id;
+            _id = id;
         }
     }
 }
