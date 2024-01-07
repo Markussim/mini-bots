@@ -6,6 +6,8 @@ namespace MiniBots
 {
     class Program
     {
+        public static string Prefix = "!";
+
         static async Task Main(string[] args)
         {
             string token = GetToken();
@@ -25,12 +27,10 @@ namespace MiniBots
 
                 string discordMessage = e.Message.Content;
 
-                string prefix = "?";
-
-                if (discordMessage.StartsWith(prefix))
+                if (discordMessage.StartsWith(Prefix))
                 {
                     // Extract command
-                    string command = discordMessage.Substring(prefix.Length).Split(" ")[0];
+                    string command = discordMessage.Substring(Prefix.Length).Split(" ")[0];
 
                     if (command == "bot")
                     {
