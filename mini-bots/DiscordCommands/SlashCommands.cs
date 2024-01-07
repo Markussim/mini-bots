@@ -1,4 +1,5 @@
 using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Text;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -57,60 +58,57 @@ namespace MiniBots
             await Reponse(ctx, embedBuilder.Build());
         }
 
-        private struct Command
-        {
-            public string Name;
-            public string Description;
-            public string Usage;
-        }
-
         [SlashCommand("help", "Shows all the available commands and how to use them.")]
         public async Task HelpCommand(InteractionContext ctx)
         {
-            Command[] commands =
-            [
-                new Command
-                {
-                    Name = Program.Prefix + "bot",
-                    Description = "Create a new MiniBot",
-                    Usage = $"{Program.Prefix}bot <BotName>\n<3x`>\n<BotCode>\n<3x`>"
-                },
-                new Command
-                {
-                    Name = "/list",
-                    Description = "List existing MiniBots",
-                    Usage = "/list"
-                },
-                new Command
-                {
-                    Name = "/get",
-                    Description = "Get code of existing MiniBot",
-                    Usage = "/get <BotName>"
-                },
-                new Command
-                {
-                    Name = "/delete",
-                    Description = "Delete a MiniBot",
-                    Usage = "/delete <BotName>"
-                },
-                new Command
-                {
-                    Name = "/help",
-                    Description = "Shows all the available commands and how to use them.",
-                    Usage = "/help"
-                }
-            ];
 
             CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
             embedBuilder.AddTitle("Available commands:");
 
-            for (int i = 0; i < commands.Length; i++)
+            foreach (Commands.LegacyCommand command in Commands.LegacyCommands)
             {
-                Command command = commands[i];
-                embedBuilder.AddDescription($"`{command.Name}`: {command.Description}\nUsage: ```{command.Usage}```\n", true);
+                AddCommand(embedBuilder, command.Name, command.Description, command.Usage);
+            }
+
+            MethodInfo[] methods = typeof(SlashCommands).GetMethods(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var method in methods)
+            {
+                var slashCommandAttribute = method.GetCustomAttribute<SlashCommandAttribute>();
+                if (slashCommandAttribute != null)
+                {
+                    string commandName = "/" + slashCommandAttribute.Name ?? method.Name.ToLower();
+                    string commandDescription = slashCommandAttribute.Description ?? "No description available";
+                    string commandUsage = GetCommandUsage(commandName, method);
+
+                    AddCommand(embedBuilder, commandName, commandDescription, commandUsage);
+                }
             }
 
             await Reponse(ctx, embedBuilder.Build(), true);
+        }
+
+        private static void AddCommand(CustomEmbedBuilder embedBuilder, string name, string description, string usage)
+        {
+            embedBuilder.AddDescription($"`{name}`: {description}\nUsage: ```{usage}```\n", true);
+        }
+        private static string GetCommandUsage(string commandName, MethodInfo method)
+        {
+            var parameters = method.GetParameters();
+
+            StringBuilder usageBuilder = new StringBuilder($"{commandName} ");
+            foreach (var parameter in parameters)
+            {
+                OptionAttribute? optionAttribute = parameter.GetCustomAttribute<OptionAttribute>();
+                string? paramName = optionAttribute?.Name;
+
+                if (paramName != null)
+                {
+                    usageBuilder.Append($"<{paramName}> ");
+                }
+            }
+
+            return usageBuilder.ToString().Trim();
         }
 
         [SlashCommand("delete", "Delete a Minibot")]
