@@ -18,19 +18,19 @@ namespace MiniBots
             List<MiniBot> miniBots = _databaseManager.GetMiniBots();
 
             // Create message
-            CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
-            embedBuilder.AddTitle("Available bots:");
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+            embedBuilder.WithTitle("Available bots:");
             if (miniBots.Count > 0)
             {
                 for (int i = 0; i < miniBots.Count; i++)
                 {
                     MiniBot miniBot = miniBots[i];
-                    embedBuilder.AddDescription($"`{i + 1}.` {miniBot.Name}\n", true);
+                    embedBuilder.Description += $"`{i + 1}.` {miniBot.Name}\n";
                 }
             }
             else
             {
-                embedBuilder.AddDescription("No bots available");
+                embedBuilder.WithDescription("No bots available");
             }
 
             // Send message
@@ -42,17 +42,17 @@ namespace MiniBots
         {
             MiniBot? miniBot = _databaseManager.GetMiniBotByName(name);
 
-            CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
 
             if (miniBot != null)
             {
-                embedBuilder.AddTitle(miniBot.Name);
-                embedBuilder.AddDescription($"```lua\n{miniBot.Code}\n```");
+                embedBuilder.WithTitle(miniBot.Name);
+                embedBuilder.WithDescription($"```lua\n{miniBot.Code}\n```");
             }
             else
             {
-                embedBuilder.AddTitle("No bot with name: " + name);
-                embedBuilder.AddDescription("List bots: /list");
+                embedBuilder.WithTitle("No bot with name: " + name);
+                embedBuilder.WithDescription("List bots: /list");
             }
 
             await Reponse(ctx, embedBuilder.Build());
@@ -62,8 +62,8 @@ namespace MiniBots
         public async Task HelpCommand(InteractionContext ctx)
         {
 
-            CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
-            embedBuilder.AddTitle("Available commands:");
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+            embedBuilder.WithTitle("Available commands:");
 
             foreach (Commands.LegacyCommand command in Commands.LegacyCommands)
             {
@@ -88,9 +88,9 @@ namespace MiniBots
             await Reponse(ctx, embedBuilder.Build(), true);
         }
 
-        private static void AddCommand(CustomEmbedBuilder embedBuilder, string name, string description, string usage)
+        private static void AddCommand(DiscordEmbedBuilder embedBuilder, string name, string description, string usage)
         {
-            embedBuilder.AddDescription($"`{name}`: {description}\nUsage: ```{usage}```\n", true);
+            embedBuilder.Description += $"`{name}`: {description}\nUsage: ```{usage}```\n";
         }
         private static string GetCommandUsage(string commandName, MethodInfo method)
         {
@@ -116,17 +116,17 @@ namespace MiniBots
         {
             MiniBot? miniBot = _databaseManager.GetMiniBotByName(name);
 
-            CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
 
             if (miniBot != null)
             {
                 _databaseManager.DeleteMiniBot(miniBot.Id);
-                embedBuilder.AddTitle("Deleted bot: " + miniBot.Name);
+                embedBuilder.WithTitle("Deleted bot: " + miniBot.Name);
             }
             else
             {
-                embedBuilder.AddTitle("No bot with name: " + name);
-                embedBuilder.AddDescription("List bots: /list");
+                embedBuilder.WithTitle("No bot with name: " + name);
+                embedBuilder.WithDescription("List bots: /list");
             }
 
             await Reponse(ctx, embedBuilder.Build());
