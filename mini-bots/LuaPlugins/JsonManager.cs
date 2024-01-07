@@ -15,12 +15,23 @@ namespace LuaPlugins
         }
 
 
-        public string JsonToString(LuaTable luaTable)
+        public string JsonToTable(string json)
         {
             return "";
         }
 
-        public Dictionary<object, object> FindTables(Dictionary<object, object> testdict)
+        public string TableToJson(LuaTable table)
+        {
+            Dictionary<object, object> dictionary = _discordLua.GetDictFromTable(table);
+            dictionary = FindTables(dictionary);
+
+            string json = JsonConvert.SerializeObject(dictionary);
+            Console.WriteLine(json);
+
+            return json;
+        }
+
+        private Dictionary<object, object> FindTables(Dictionary<object, object> testdict)
         {
             foreach (KeyValuePair<object, object> de in testdict)
             {
@@ -32,26 +43,6 @@ namespace LuaPlugins
             }
 
             return testdict;
-        }
-
-        public void Testfuction(LuaTable test)
-        {
-            Dictionary<object, object> testdict = _discordLua.GetDictFromTable(test);
-            testdict = FindTables(testdict);
-
-            Console.WriteLine(testdict);
-
-            foreach (KeyValuePair<object, object> de in testdict)
-            {
-                Console.WriteLine(de.Value.GetType());
-                Console.WriteLine("{0} {1}", de.Key.ToString(), de.Value.ToString());
-                //if (de.Value.GetType() == typeof(LuaTable))
-                //{
-                //    Dictionary<object, object> testdict2 = _discordLua.GetDictFromTable(test);
-                //}
-            }
-
-            Console.WriteLine(JsonConvert.SerializeObject(testdict));
         }
     }
 }
