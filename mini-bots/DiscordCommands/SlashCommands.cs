@@ -133,7 +133,7 @@ namespace MiniBots
         }
 
 
-        private static async Task Reponse(InteractionContext ctx, DiscordEmbed embed, Boolean senderOnly = false)
+        private static async Task Reponse(InteractionContext ctx, DiscordEmbed embed, bool senderOnly = false)
         {
             await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(senderOnly));
         }
