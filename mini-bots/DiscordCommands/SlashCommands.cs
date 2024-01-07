@@ -110,7 +110,7 @@ namespace MiniBots
                 embedBuilder.AddDescription($"`{command.Name}`: {command.Description}\nUsage: ```{command.Usage}```\n", true);
             }
 
-            await Reponse(ctx, embedBuilder.Build());
+            await Reponse(ctx, embedBuilder.Build(), true);
         }
 
         [SlashCommand("delete", "Delete a Minibot")]
@@ -135,15 +135,9 @@ namespace MiniBots
         }
 
 
-
-        private static async Task ReponseString(InteractionContext ctx, string message)
+        private static async Task Reponse(InteractionContext ctx, DiscordEmbed embed, Boolean senderOnly = false)
         {
-            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message));
-        }
-
-        private static async Task Reponse(InteractionContext ctx, DiscordEmbed embed)
-        {
-            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(senderOnly));
         }
     }
 }
