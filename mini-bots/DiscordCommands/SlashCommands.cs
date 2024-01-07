@@ -67,8 +67,8 @@ namespace MiniBots
         [SlashCommand("help", "Shows all the available commands and how to use them.")]
         public async Task HelpCommand(InteractionContext ctx)
         {
-            Command[] commands = new Command[]
-            {
+            Command[] commands =
+            [
                 new Command
                 {
                     Name = Program.Prefix + "bot",
@@ -99,7 +99,7 @@ namespace MiniBots
                     Description = "Shows all the available commands and how to use them.",
                     Usage = "/help"
                 }
-            };
+            ];
 
             CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
             embedBuilder.AddTitle("Available commands:");
