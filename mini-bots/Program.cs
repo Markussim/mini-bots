@@ -25,7 +25,7 @@ namespace MiniBots
 
                 string discordMessage = e.Message.Content;
 
-                string prefix = "!";
+                string prefix = "_";
 
                 if (discordMessage.StartsWith(prefix))
                 {
