@@ -1,3 +1,4 @@
+using System.Net.NetworkInformation;
 using System.Text;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -24,7 +25,6 @@ namespace MiniBots
                 {
                     MiniBot miniBot = miniBots[i];
                     embedBuilder.AddDescription($"`{i + 1}.` {miniBot.Name}\n", true);
-
                 }
             }
             else
@@ -41,27 +41,76 @@ namespace MiniBots
         {
             MiniBot? miniBot = _databaseManager.GetMiniBotByName(name);
 
+            CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
+
             if (miniBot != null)
             {
-                await ReponseString(ctx, "```lua" + miniBot.Code + "```");
+                embedBuilder.AddTitle(miniBot.Name);
+                embedBuilder.AddDescription($"```lua\n{miniBot.Code}\n```");
             }
             else
             {
-                await ReponseString(ctx, "no such bot you fool");
+                embedBuilder.AddTitle("No bot with name: " + name);
+                embedBuilder.AddDescription("List bots: /list");
             }
+
+            await Reponse(ctx, embedBuilder.Build());
+        }
+
+        private struct Command
+        {
+            public string Name;
+            public string Description;
+            public string Usage;
         }
 
         [SlashCommand("help", "Shows all the available commands and how to use them.")]
         public async Task HelpCommand(InteractionContext ctx)
         {
-            // Tell user how to use the bot, and limits of the bot
-            string helpMessage = "Mini Bot Help\n" +
-                "To create a bot, type: ```!bot <name> <3x:`>lua \n<code> \n<3x:`> ```\n" +
-                "List bots: !list\n" +
-                "Get bot code: !get <name>\n" +
-                "View help: !help";
+            Command[] commands = new Command[]
+            {
+                new Command
+                {
+                    Name = Program.Prefix + "bot",
+                    Description = "Create a new MiniBot",
+                    Usage = $"{Program.Prefix}bot <BotName>\n<3x`>\n<BotCode>\n<3x`>"
+                },
+                new Command
+                {
+                    Name = "/list",
+                    Description = "List existing MiniBots",
+                    Usage = "/list"
+                },
+                new Command
+                {
+                    Name = "/get",
+                    Description = "Get code of existing MiniBot",
+                    Usage = "/get <BotName>"
+                },
+                new Command
+                {
+                    Name = "/delete",
+                    Description = "Delete a MiniBot",
+                    Usage = "/delete <BotName>"
+                },
+                new Command
+                {
+                    Name = "/help",
+                    Description = "Shows all the available commands and how to use them.",
+                    Usage = "/help"
+                }
+            };
 
-            await ReponseString(ctx, helpMessage);
+            CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
+            embedBuilder.AddTitle("Available commands:");
+
+            for (int i = 0; i < commands.Length; i++)
+            {
+                Command command = commands[i];
+                embedBuilder.AddDescription($"`{command.Name}`: {command.Description}\nUsage: ```{command.Usage}```\n", true);
+            }
+
+            await Reponse(ctx, embedBuilder.Build());
         }
 
         [SlashCommand("delete", "Delete a Minibot")]
@@ -69,15 +118,20 @@ namespace MiniBots
         {
             MiniBot? miniBot = _databaseManager.GetMiniBotByName(name);
 
+            CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
+
             if (miniBot != null)
             {
                 _databaseManager.DeleteMiniBot(miniBot.Id);
-                await ReponseString(ctx, "Deleted: " + name);
+                embedBuilder.AddTitle("Deleted bot: " + miniBot.Name);
             }
             else
             {
-                await ReponseString(ctx, "No bot with name: " + name);
+                embedBuilder.AddTitle("No bot with name: " + name);
+                embedBuilder.AddDescription("List bots: /list");
             }
+
+            await Reponse(ctx, embedBuilder.Build());
         }
 
 
