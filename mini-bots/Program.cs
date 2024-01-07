@@ -25,14 +25,15 @@ namespace MiniBots
 
                 string discordMessage = e.Message.Content;
 
-                string prefix = "!";
+                string prefix = "?";
 
                 if (discordMessage.StartsWith(prefix))
                 {
                     // Extract command
                     string command = discordMessage.Substring(prefix.Length).Split(" ")[0];
 
-                    if(command == "bot") {
+                    if (command == "bot")
+                    {
                         Commands.CreateBot(e, databaseManager);
                     }
 
@@ -83,7 +84,7 @@ namespace MiniBots
             }
         }
 
-        
+
         private static DiscordClient GetDiscordClient(string token)
         {
             DiscordClient discord = new DiscordClient(new DiscordConfiguration()

@@ -12,24 +12,28 @@ namespace MiniBots
         [SlashCommand("list", "List existing MiniBots")]
         public async Task ListCommand(InteractionContext ctx)
         {
-            String message = "Bots: \n";
-
             // Get all bots
             List<MiniBot> miniBots = _databaseManager.GetMiniBots();
 
-            // Add string builder
-            StringBuilder sb = new StringBuilder();
-
-
-            foreach (MiniBot miniBot in miniBots)
+            // Create message
+            CustomEmbedBuilder embedBuilder = new CustomEmbedBuilder(ctx.Client.CurrentUser);
+            embedBuilder.AddTitle("Available bots:");
+            if (miniBots.Count > 0)
             {
-                //message += "- " + miniBot.Name + "\n";
-                sb.Append("- " + miniBot.Name + "\n");
+                for (int i = 0; i < miniBots.Count; i++)
+                {
+                    MiniBot miniBot = miniBots[i];
+                    embedBuilder.AddDescription($"`{i + 1}.` {miniBot.Name}\n", true);
+
+                }
+            }
+            else
+            {
+                embedBuilder.AddDescription("No bots available");
             }
 
-            message += sb.ToString();
-
-            await Reponse(ctx, message);
+            // Send message
+            await Reponse(ctx, embedBuilder.Build());
         }
 
         [SlashCommand("get", "Get code of existing MiniBot")]
@@ -39,11 +43,11 @@ namespace MiniBots
 
             if (miniBot != null)
             {
-                await Reponse(ctx, "```lua" + miniBot.Code + "```");
+                await ReponseString(ctx, "```lua" + miniBot.Code + "```");
             }
             else
             {
-                await Reponse(ctx, "no such bot you fool");
+                await ReponseString(ctx, "no such bot you fool");
             }
         }
 
@@ -57,7 +61,7 @@ namespace MiniBots
                 "Get bot code: !get <name>\n" +
                 "View help: !help";
 
-            await Reponse(ctx, helpMessage);
+            await ReponseString(ctx, helpMessage);
         }
 
         [SlashCommand("delete", "Delete a Minibot")]
@@ -68,19 +72,24 @@ namespace MiniBots
             if (miniBot != null)
             {
                 _databaseManager.DeleteMiniBot(miniBot.Id);
-                await Reponse(ctx, "Deleted: " + name);
+                await ReponseString(ctx, "Deleted: " + name);
             }
             else
             {
-                await Reponse(ctx, "No bot with name: " + name);
+                await ReponseString(ctx, "No bot with name: " + name);
             }
         }
 
 
 
-        private static async Task Reponse(InteractionContext ctx, string message)
+        private static async Task ReponseString(InteractionContext ctx, string message)
         {
             await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message));
+        }
+
+        private static async Task Reponse(InteractionContext ctx, DiscordEmbed embed)
+        {
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed));
         }
     }
 }
