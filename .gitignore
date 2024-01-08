@@ -399,6 +399,9 @@ FodyWeavers.xsd
 
 # Database
 *.db
+*.db-shm
+*.db-wal
+
 
 # Token
 token.txt
