@@ -41,6 +41,7 @@ namespace MiniBots
         public DatabaseManager()
         {
             _context = new MiniBotsContext();
+            _context.Database.EnsureCreated();
         }
 
         public MiniBot? GetMiniBotByName(string name)
@@ -48,6 +49,11 @@ namespace MiniBots
             // Select all records using a LINQ query
             List<MiniBot> miniBots = [.. _context.MiniBots.Where(miniBot => miniBot.Name == name)];
 
+            if (miniBots.Count == 0)
+            {
+                return null;
+            }
+            
             return miniBots[0];
         }
 
