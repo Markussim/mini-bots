@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using LuaManagement;
+using Microsoft.Extensions.Configuration;
 
 namespace MiniBots
 {
@@ -10,12 +11,12 @@ namespace MiniBots
 
         static async Task Main(string[] args)
         {
-            string token = GetToken();
+            DiscordSettings discordSettings = GetDiscordSettings();
             DiscordLua discordLua = new DiscordLua();
 
-            var discord = GetDiscordClient(token);
+            var discord = GetDiscordClient(discordSettings.Token);
             var slash = discord.UseSlashCommands();
-            slash.RegisterCommands<SlashCommands>(554977304665784325);
+            slash.RegisterCommands<SlashCommands>(discordSettings.GuildID);
 
             // Create the database connection
             DatabaseManager databaseManager = new DatabaseManager();
@@ -51,39 +52,58 @@ namespace MiniBots
             await Task.Delay(-1);
         }
 
-        private static string GetToken()
+        private static DiscordSettings GetDiscordSettings()
         {
-            string token;
-            // Read environment variable if file doesn't exist
-            if (!File.Exists("./token.txt"))
-            {
-                string? envToken = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+            IConfigurationSection? discordSettings = null;
 
-                if (envToken == null)
-                {
-                    throw new Exception("DISCORD_TOKEN environment variable not set");
-                }
-                else
-                {
-                    return envToken;
-                }
-            }
-            else
+            var parentpath = Directory.GetParent(Directory.GetCurrentDirectory());
+
+            if (parentpath != null)
             {
-                // Read the token from a file instead of having it in code
-                try
+                var configuration = new ConfigurationBuilder()
+                    .SetBasePath(parentpath.FullName)
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .Build();
+
+                discordSettings = configuration.GetSection("DiscordSettings");
+            }
+
+            string? discordToken = null;
+            ulong? discordGuildID = null;
+            if (discordSettings != null)
+            {
+                discordToken = discordSettings["Token"];
+                if (discordToken == null)
                 {
-                    token = File.ReadAllText("./token.txt").Trim(); // Make sure to update the path to the actual file location
-                    return token;
+                    discordToken = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
                 }
-                catch (IOException ex)
+
+                string? discordGuildIDstring = discordSettings["GuildID"];
+                if (discordGuildIDstring == null)
                 {
-                    Console.WriteLine($"Could not read the token file: {ex.Message}");
-                    throw;
+                    discordGuildIDstring = Environment.GetEnvironmentVariable("DISCORD_GUILDID");
+                }
+
+                if (discordGuildIDstring != null)
+                {
+                    try
+                    {
+                        discordGuildID = Convert.ToUInt64(discordGuildIDstring);
+                    }
+                    catch
+                    {
+                        throw new Exception("DISCORD_GUILDID/DiscordSettings.GuildID failed to parse");
+                    }
                 }
             }
+
+            if (discordToken == null)
+            {
+                throw new Exception("DISCORD_TOKEN environment variable not set, and DiscordSettings.Token not declared in appsettings.json");
+            }
+
+            return new DiscordSettings(discordToken, discordGuildID);
         }
-
 
         private static DiscordClient GetDiscordClient(string token)
         {
@@ -96,6 +116,18 @@ namespace MiniBots
 
             return discord;
         }
+    }
 
+    public class DiscordSettings
+    {
+        public string Token { get; }
+
+        public ulong? GuildID { get; }
+
+        public DiscordSettings(string token, ulong? guildID)
+        {
+            Token = token;
+            GuildID = guildID;
+        }
     }
 }
