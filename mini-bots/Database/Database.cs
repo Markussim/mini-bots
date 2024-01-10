@@ -1,27 +1,34 @@
-using Watson.ORM.Core;
-using DatabaseWrapper.Core;
-using Watson.ORM.Sqlite;
-using ExpressionTree;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace MiniBots
 {
-    // Apply attributes to your class
+    public class MiniBotsContext : DbContext
+    {
+        public DbSet<MiniBot> MiniBots { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlite("Data Source=./Database/mini-bots.db");
+        }
+    }
+
     [Table("miniBots")]
     public class MiniBot
     {
-        [Column("id", true, DataTypes.Int, false)]
+        [Key]
         public int Id { get; set; }
 
-        [Column("name", false, DataTypes.Nvarchar, 64, false)]
+        [StringLength(64)]
         public string Name { get; set; }
 
-        [Column("code", false, DataTypes.Nvarchar, 64, false)]
+        [StringLength(64)]
         public string Code { get; set; }
 
-        [Column("storage", false, DataTypes.Nvarchar, 64, false)]
+        [StringLength(64)]
         public string Storage { get; set; }
 
-        // Parameter-less constructor is required
         public MiniBot()
         {
         }
@@ -29,43 +36,31 @@ namespace MiniBots
 
     public class DatabaseManager
     {
-        private WatsonORM Orm { get; }
+        private MiniBotsContext _context;
 
         public DatabaseManager()
         {
-            string databasePath = "./Database/mini-bots.db";
-            DatabaseSettings settings = new DatabaseSettings(databasePath);
-            Orm = new WatsonORM(settings);
-            Orm.InitializeDatabase();
-            Orm.InitializeTable(typeof(MiniBot));
+            _context = new MiniBotsContext();
+            _context.Database.EnsureCreated();
         }
 
         public MiniBot? GetMiniBotByName(string name)
         {
-            Expr selectFilter = new Expr(
-                Orm.GetColumnName<MiniBot>(nameof(MiniBot.Name)),
-                OperatorEnum.Equals,
-                name);
-            // Select all records
-            List<MiniBot> miniBots = Orm.SelectMany<MiniBot>(null, null, selectFilter);
+            // Select all records using a LINQ query
+            List<MiniBot> miniBots = [.. _context.MiniBots.Where(miniBot => miniBot.Name == name)];
 
-            if (miniBots.Count > 1)
-            {
-                // This should never happen
-                Console.WriteLine("More than 1 bot with name: " + name);
-            }
-            if (miniBots.Count <= 0)
+            if (miniBots.Count == 0)
             {
                 return null;
             }
-
+            
             return miniBots[0];
         }
 
         public List<MiniBot> GetMiniBots()
         {
             // Select all records
-            List<MiniBot> miniBots = Orm.SelectMany<MiniBot>();
+            List<MiniBot> miniBots = [.. _context.MiniBots.ToList()];
 
             return miniBots;
         }
@@ -75,9 +70,6 @@ namespace MiniBots
             MiniBot? miniBot = GetMiniBotByName(name);
             if (miniBot != null)
             {
-                miniBot.Code = code;
-                miniBot.Storage = ""; // Clear storage on update
-                Orm.Update(miniBot);
                 return;
             }
 
@@ -87,15 +79,18 @@ namespace MiniBots
                 Code = code,
                 Storage = ""
             };
-            Orm.Insert(newMiniBot);
+
+            _context.MiniBots.Add(newMiniBot);
+            _context.SaveChanges();
         }
 
         public string GetStorage(int id)
         {
-            MiniBot? miniBot = Orm.SelectByPrimaryKey<MiniBot>(id);
+            MiniBot? miniBot = _context.MiniBots.Find(id);
+
             if (miniBot == null)
             {
-                return "";
+                throw new Exception("MiniBot not found");
             }
 
             return miniBot.Storage;
@@ -109,10 +104,11 @@ namespace MiniBots
         /// <param name="append"> If true, append the data to the existing storage. </param>
         public void SetStorage(int id, string data, bool append = false)
         {
-            MiniBot? miniBot = Orm.SelectByPrimaryKey<MiniBot>(id);
+            MiniBot? miniBot = _context.MiniBots.Find(id);
+
             if (miniBot == null)
             {
-                return;
+                throw new Exception("MiniBot not found");
             }
 
             if (append)
@@ -124,18 +120,20 @@ namespace MiniBots
                 miniBot.Storage = data;
             }
 
-            Orm.Update(miniBot);
+            _context.SaveChanges();
         }
 
         public void DeleteMiniBot(int id)
         {
-            MiniBot? miniBot = Orm.SelectByPrimaryKey<MiniBot>(id);
+            MiniBot? miniBot = _context.MiniBots.Find(id);
+
             if (miniBot == null)
             {
-                return;
+                throw new Exception("MiniBot not found");
             }
 
-            Orm.Delete(miniBot);
+            _context.MiniBots.Remove(miniBot);
+            _context.SaveChanges();
         }
     }
 }

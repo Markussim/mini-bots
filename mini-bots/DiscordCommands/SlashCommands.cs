@@ -1,3 +1,5 @@
+using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Text;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -12,24 +14,27 @@ namespace MiniBots
         [SlashCommand("list", "List existing MiniBots")]
         public async Task ListCommand(InteractionContext ctx)
         {
-            String message = "Bots: \n";
-
             // Get all bots
             List<MiniBot> miniBots = _databaseManager.GetMiniBots();
 
-            // Add string builder
-            StringBuilder sb = new StringBuilder();
-
-
-            foreach (MiniBot miniBot in miniBots)
+            // Create message
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+            embedBuilder.WithTitle("Available bots:");
+            if (miniBots.Count > 0)
             {
-                //message += "- " + miniBot.Name + "\n";
-                sb.Append("- " + miniBot.Name + "\n");
+                for (int i = 0; i < miniBots.Count; i++)
+                {
+                    MiniBot miniBot = miniBots[i];
+                    embedBuilder.Description += $"`{i + 1}.` {miniBot.Name}\n";
+                }
+            }
+            else
+            {
+                embedBuilder.WithDescription("No bots available");
             }
 
-            message += sb.ToString();
-
-            await Reponse(ctx, message);
+            // Send message
+            await Reponse(ctx, embedBuilder.Build());
         }
 
         [SlashCommand("get", "Get code of existing MiniBot")]
@@ -37,27 +42,73 @@ namespace MiniBots
         {
             MiniBot? miniBot = _databaseManager.GetMiniBotByName(name);
 
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+
             if (miniBot != null)
             {
-                await Reponse(ctx, "```lua" + miniBot.Code + "```");
+                embedBuilder.WithTitle(miniBot.Name);
+                embedBuilder.WithDescription($"```lua\n{miniBot.Code}\n```");
             }
             else
             {
-                await Reponse(ctx, "no such bot you fool");
+                embedBuilder.WithTitle("No bot with name: " + name);
+                embedBuilder.WithDescription("List bots: /list");
             }
+
+            await Reponse(ctx, embedBuilder.Build());
         }
 
         [SlashCommand("help", "Shows all the available commands and how to use them.")]
         public async Task HelpCommand(InteractionContext ctx)
         {
-            // Tell user how to use the bot, and limits of the bot
-            string helpMessage = "Mini Bot Help\n" +
-                "To create a bot, type: ```!bot <name> <3x:`>lua \n<code> \n<3x:`> ```\n" +
-                "List bots: !list\n" +
-                "Get bot code: !get <name>\n" +
-                "View help: !help";
 
-            await Reponse(ctx, helpMessage);
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+            embedBuilder.WithTitle("Available commands:");
+
+            foreach (Commands.LegacyCommand command in Commands.LegacyCommands)
+            {
+                AddCommand(embedBuilder, command.Name, command.Description, command.Usage);
+            }
+
+            MethodInfo[] methods = typeof(SlashCommands).GetMethods(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var method in methods)
+            {
+                var slashCommandAttribute = method.GetCustomAttribute<SlashCommandAttribute>();
+                if (slashCommandAttribute != null)
+                {
+                    string commandName = "/" + slashCommandAttribute.Name ?? method.Name.ToLower();
+                    string commandDescription = slashCommandAttribute.Description ?? "No description available";
+                    string commandUsage = GetCommandUsage(commandName, method);
+
+                    AddCommand(embedBuilder, commandName, commandDescription, commandUsage);
+                }
+            }
+
+            await Reponse(ctx, embedBuilder.Build(), true);
+        }
+
+        private static void AddCommand(DiscordEmbedBuilder embedBuilder, string name, string description, string usage)
+        {
+            embedBuilder.Description += $"`{name}`: {description}\nUsage: ```{usage}```\n";
+        }
+        private static string GetCommandUsage(string commandName, MethodInfo method)
+        {
+            var parameters = method.GetParameters();
+
+            StringBuilder usageBuilder = new StringBuilder($"{commandName} ");
+            foreach (var parameter in parameters)
+            {
+                OptionAttribute? optionAttribute = parameter.GetCustomAttribute<OptionAttribute>();
+                string? paramName = optionAttribute?.Name;
+
+                if (paramName != null)
+                {
+                    usageBuilder.Append($"<{paramName}> ");
+                }
+            }
+
+            return usageBuilder.ToString().Trim();
         }
 
         [SlashCommand("delete", "Delete a Minibot")]
@@ -65,22 +116,26 @@ namespace MiniBots
         {
             MiniBot? miniBot = _databaseManager.GetMiniBotByName(name);
 
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+
             if (miniBot != null)
             {
                 _databaseManager.DeleteMiniBot(miniBot.Id);
-                await Reponse(ctx, "Deleted: " + name);
+                embedBuilder.WithTitle("Deleted bot: " + miniBot.Name);
             }
             else
             {
-                await Reponse(ctx, "No bot with name: " + name);
+                embedBuilder.WithTitle("No bot with name: " + name);
+                embedBuilder.WithDescription("List bots: /list");
             }
+
+            await Reponse(ctx, embedBuilder.Build());
         }
 
 
-
-        private static async Task Reponse(InteractionContext ctx, string message)
+        private static async Task Reponse(InteractionContext ctx, DiscordEmbed embed, bool senderOnly = false)
         {
-            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message));
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(senderOnly));
         }
     }
 }

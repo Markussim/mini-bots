@@ -1,10 +1,25 @@
-using ExpressionTree;
 using LuaManagement;
 
 namespace MiniBots
 {
     class Commands
     {
+        public struct LegacyCommand
+        {
+            public string Name;
+            public string Description;
+            public string Usage;
+        }
+
+        public static LegacyCommand[] LegacyCommands = [
+            new LegacyCommand
+            {
+                Name = Program.Prefix + "bot",
+                Description = "Create a new bot",
+                Usage =  Program.Prefix + "bot <name>\n<3x`>lua\n\t<code>\n<3x`>"
+            },
+        ];
+
         public static void CreateBot(DSharpPlus.EventArgs.MessageCreateEventArgs e, DatabaseManager databaseManager)
         {
             Console.WriteLine("Creating bot");
