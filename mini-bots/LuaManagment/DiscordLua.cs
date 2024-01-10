@@ -55,7 +55,11 @@ namespace LuaManagement
 
         public LuaTable CreateLuaTable()
         {
-            string luaTableKey = "dontusethisinyourluaoritwillbeoverwritten";
+            // random string to avoid collisions
+            Random rnd = new Random();
+            int num = rnd.Next();
+            string luaTableKey = "superdupertable" + num.ToString();
+            
             _lua.NewTable(luaTableKey);
             return _lua.GetTable(luaTableKey);
         }
