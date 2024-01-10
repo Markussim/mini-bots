@@ -25,6 +25,7 @@ namespace LuaManagement
 
             Byte[] luaIn = Encoding.UTF8.GetBytes(code);
 
+            _lua.State.Encoding = Encoding.UTF8;
             // TODO: Handle utf8 output
             object[] luaOutput = _lua.DoString(luaIn);
 
@@ -50,6 +51,13 @@ namespace LuaManagement
         public Dictionary<object, object> GetDictFromTable(LuaTable table)
         {
             return _lua.GetTableDict(table);
+        }
+
+        public LuaTable CreateLuaTable()
+        {
+            string luaTableKey = "dontusethisinyourluaoritwillbeoverwritten";
+            _lua.NewTable(luaTableKey);
+            return _lua.GetTable(luaTableKey);
         }
     }
 }

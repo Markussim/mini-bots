@@ -1,7 +1,6 @@
-using System.Collections;
-using System.Text.Json;
 using LuaManagement;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NLua;
 
 namespace LuaPlugins
@@ -15,9 +14,44 @@ namespace LuaPlugins
         }
 
 
-        public string JsonToTable(string json)
+        public LuaTable JsonToTable(string json)
         {
-            return "";
+            Console.WriteLine("Tjo");
+            LuaTable table = _discordLua.CreateLuaTable();
+            Console.WriteLine(table.ToString());
+    
+            Console.WriteLine(table.Keys);
+            if (table.Keys.ToString() == null){
+                Console.WriteLine("test");
+            }
+            Console.WriteLine("tablehej: " + table["hej"]);
+
+            Dictionary<object, object>? dictionary = JsonConvert.DeserializeObject<Dictionary<object, object>>(json);
+            if (dictionary != null)
+            {
+                foreach (KeyValuePair<object, object> de in dictionary)
+                {
+                    Console.WriteLine(de.Key.ToString() + ", " + de.Value.ToString());
+                    Console.WriteLine(de.Value.GetType());
+
+                    if (de.Value.GetType() == typeof(JObject))
+                    {
+                        JObject? jObject = (JObject)de.Value;
+                        Dictionary<object, object>? subDictionary = jObject.ToObject<Dictionary<object, object>>();
+                        if (subDictionary != null)
+                        {
+                            dictionary[de.Key] = subDictionary;
+                        }
+                    }
+                    else
+                    {
+                        //table = "hgej";
+                        table[de.Key] = de.Value;
+                    }
+                    // TODO: Make sure keys like 1 are returned as int and not string
+                }
+            }
+            return table;
         }
 
         public string TableToJson(LuaTable table)
@@ -31,18 +65,18 @@ namespace LuaPlugins
             return json;
         }
 
-        private Dictionary<object, object> FindTables(Dictionary<object, object> testdict)
+        private Dictionary<object, object> FindTables(Dictionary<object, object> dictionary)
         {
-            foreach (KeyValuePair<object, object> de in testdict)
+            foreach (KeyValuePair<object, object> de in dictionary)
             {
                 if (de.Value.GetType() == typeof(LuaTable))
                 {
-                    Dictionary<object, object> testdict2 = _discordLua.GetDictFromTable((LuaTable)de.Value);
-                    testdict[de.Key] = FindTables(testdict2);
+                    Dictionary<object, object> tmpDictionary = _discordLua.GetDictFromTable((LuaTable)de.Value);
+                    dictionary[de.Key] = FindTables(tmpDictionary);
                 }
             }
 
-            return testdict;
+            return dictionary;
         }
     }
 }
