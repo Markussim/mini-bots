@@ -24,7 +24,7 @@ namespace LuaManagement
 
             Byte[] luaIn = Encoding.UTF8.GetBytes(code);
 
-            // TODO: Handle utf8 output
+            _lua.State.Encoding = Encoding.UTF8;
             object[] luaOutput = _lua.DoString(luaIn);
 
             if (luaOutput.Length > 0)
