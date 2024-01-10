@@ -25,7 +25,6 @@ namespace LuaManagement
 
             Byte[] luaIn = Encoding.UTF8.GetBytes(code);
 
-            _lua.State.Encoding = Encoding.UTF8;
             // TODO: Handle utf8 output
             object[] luaOutput = _lua.DoString(luaIn);
 
@@ -59,7 +58,7 @@ namespace LuaManagement
             Random rnd = new Random();
             int num = rnd.Next();
             string luaTableKey = "superdupertable" + num.ToString();
-            
+
             _lua.NewTable(luaTableKey);
             return _lua.GetTable(luaTableKey);
         }
