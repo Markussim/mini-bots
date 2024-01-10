@@ -7,11 +7,13 @@ namespace MiniBots
 {
     class Program
     {
-        public static string Prefix = "!";
+        public static string Prefix = "";
 
         static async Task Main(string[] args)
         {
             DiscordSettings discordSettings = GetDiscordSettings();
+            Prefix = discordSettings.CommandPrefix;
+
             DiscordLua discordLua = new DiscordLua();
 
             var discord = GetDiscordClient(discordSettings.Token);
@@ -68,41 +70,49 @@ namespace MiniBots
                 discordSettings = configuration.GetSection("DiscordSettings");
             }
 
-            string? discordToken = null;
+            string? discordToken = GetDiscordSetting(discordSettings, "Token", "DISCORD_TOKEN", true);
+            if (discordToken == null) throw new Exception("This should never happen");
+
+            string? commandPrefix = GetDiscordSetting(discordSettings, "Prefix", "DISCORD_PREFIX", false);
+
+            string? discordGuildIDstring = GetDiscordSetting(discordSettings, "GuildID", "DISCORD_GUILDID", false);
+
             ulong? discordGuildID = null;
+            if (discordGuildIDstring != null)
+            {
+                try
+                {
+                    discordGuildID = Convert.ToUInt64(discordGuildIDstring);
+                }
+                catch
+                {
+                    throw new Exception("DISCORD_GUILDID/DiscordSettings.GuildID failed to parse");
+                }
+            }
+
+            return new DiscordSettings(discordToken, discordGuildID, commandPrefix);
+        }
+
+        private static string? GetDiscordSetting(IConfigurationSection? discordSettings, string appsettingsName, string environmentName, bool required)
+        {
+            string? setting = null;
+
             if (discordSettings != null)
             {
-                discordToken = discordSettings["Token"];
-                if (discordToken == null)
-                {
-                    discordToken = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
-                }
+                setting = discordSettings[appsettingsName];
 
-                string? discordGuildIDstring = discordSettings["GuildID"];
-                if (discordGuildIDstring == null)
+                if (setting == null)
                 {
-                    discordGuildIDstring = Environment.GetEnvironmentVariable("DISCORD_GUILDID");
-                }
-
-                if (discordGuildIDstring != null)
-                {
-                    try
-                    {
-                        discordGuildID = Convert.ToUInt64(discordGuildIDstring);
-                    }
-                    catch
-                    {
-                        throw new Exception("DISCORD_GUILDID/DiscordSettings.GuildID failed to parse");
-                    }
+                    setting = Environment.GetEnvironmentVariable(environmentName);
                 }
             }
 
-            if (discordToken == null)
+            if (setting == null && required)
             {
-                throw new Exception("DISCORD_TOKEN environment variable not set, and DiscordSettings.Token not declared in appsettings.json");
+                throw new Exception(environmentName + " environment variable not set, and DiscordSettings." + appsettingsName + " not declared in appsettings.json");
             }
 
-            return new DiscordSettings(discordToken, discordGuildID);
+            return setting;
         }
 
         private static DiscordClient GetDiscordClient(string token)
@@ -124,10 +134,17 @@ namespace MiniBots
 
         public ulong? GuildID { get; }
 
-        public DiscordSettings(string token, ulong? guildID)
+        public string CommandPrefix { get; } = "?";
+
+        public DiscordSettings(string token, ulong? guildID, string? commandPrefix)
         {
             Token = token;
             GuildID = guildID;
+
+            if (commandPrefix != null)
+            {
+                CommandPrefix = commandPrefix;
+            }
         }
     }
 }
