@@ -19,7 +19,6 @@ namespace LuaPlugins
             dictionary = FindTables(dictionary);
 
             string json = JsonConvert.SerializeObject(dictionary);
-            Console.WriteLine(json);
 
             return json;
         }
@@ -61,7 +60,6 @@ namespace LuaPlugins
 
                     if (subDictionary != null)
                     {
-                        Console.WriteLine("going deeper");
                         luaTable[de.Key] = FindJObject(subDictionary, _discordLua.CreateLuaTable());
                     }
                 }
