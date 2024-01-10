@@ -23,10 +23,9 @@ namespace LuaManagement
             _lua["storageManager"] = new StorageManager(databaseManager, id);
             _lua["jsonManager"] = new JsonManager(this);
 
-            Byte[] luaIn = Encoding.UTF8.GetBytes(code);
 
-            // TODO: Handle utf8 output
-            object[] luaOutput = _lua.DoString(luaIn);
+            _lua.State.Encoding = Encoding.UTF8;
+            object[] luaOutput = _lua.DoString(code);
 
             if (luaOutput.Length > 0)
             {
