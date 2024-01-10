@@ -53,7 +53,7 @@ namespace MiniBots
             {
                 return null;
             }
-            
+
             return miniBots[0];
         }
 
@@ -70,17 +70,22 @@ namespace MiniBots
             MiniBot? miniBot = GetMiniBotByName(name);
             if (miniBot != null)
             {
-                return;
+                miniBot.Code = code;
+                miniBot.Storage = "";
+                _context.MiniBots.Update(miniBot);
+            }
+            else
+            {
+                MiniBot newMiniBot = new MiniBot
+                {
+                    Name = name,
+                    Code = code,
+                    Storage = ""
+                };
+
+                _context.MiniBots.Add(newMiniBot);
             }
 
-            MiniBot newMiniBot = new MiniBot
-            {
-                Name = name,
-                Code = code,
-                Storage = ""
-            };
-
-            _context.MiniBots.Add(newMiniBot);
             _context.SaveChanges();
         }
 
