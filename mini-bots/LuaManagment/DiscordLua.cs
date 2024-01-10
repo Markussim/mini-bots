@@ -22,10 +22,9 @@ namespace LuaManagement
             _lua["timeManager"] = new TimeManager();
             _lua["storageManager"] = new StorageManager(databaseManager, id);
 
-            Byte[] luaIn = Encoding.UTF8.GetBytes(code);
 
             _lua.State.Encoding = Encoding.UTF8;
-            object[] luaOutput = _lua.DoString(luaIn);
+            object[] luaOutput = _lua.DoString(code);
 
             if (luaOutput.Length > 0)
             {
