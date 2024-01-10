@@ -21,6 +21,7 @@ namespace LuaManagement
             _lua["messageManager"] = new MessageManager(message);
             _lua["timeManager"] = new TimeManager();
             _lua["storageManager"] = new StorageManager(databaseManager, id);
+            _lua["jsonManager"] = new JsonManager(this);
 
             Byte[] luaIn = Encoding.UTF8.GetBytes(code);
 
@@ -44,6 +45,22 @@ namespace LuaManagement
                 return "";
             }
 
+        }
+
+        public Dictionary<object, object> GetDictFromTable(LuaTable table)
+        {
+            return _lua.GetTableDict(table);
+        }
+
+        public LuaTable CreateLuaTable()
+        {
+            // random string to avoid collisions
+            Random rnd = new Random();
+            int num = rnd.Next();
+            string luaTableKey = "superdupertable" + num.ToString();
+
+            _lua.NewTable(luaTableKey);
+            return _lua.GetTable(luaTableKey);
         }
     }
 }
