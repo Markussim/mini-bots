@@ -10,7 +10,7 @@ jobs:
     build-and-push:
         runs-on: ubuntu-latest
         permissions:
-            contents: read
+            contents: write
             packages: write
         steps:
             - name: Checkout
@@ -66,5 +66,6 @@ jobs:
               with:
                   tag_name: ${{ steps.get_version.outputs.version }}
                   release_name: ${{ steps.get_version.outputs.version }}
+                  body: ${{ steps.extract-release-notes.outputs.release_notes }}
                   draft: false
                   prerelease: false
