@@ -50,5 +50,4 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
                   version="${{ steps.get_version.outputs.version }}"
-                  release_notes="${{ steps.extract-release-notes.outputs.release_notes }}"
-                  gh release create "$version" -F - <<<"$release_notes"
+                  gh release create "$version" -F - <<<"${{ steps.extract-release-notes.outputs.release_notes }}"
