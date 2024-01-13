@@ -1,0 +1,70 @@
+name: Build and release Docker image
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    build-and-push:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            packages: write
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+
+            - name: Get latest version from CHANGELOG.md
+              id: get_version
+              run: echo "::set-output name=version::$(awk -F '[][]' '/##/ {print $2}' CHANGELOG.md | head -n 1)"
+
+            - name: Check if release already exists
+              id: check_release
+              run: |
+                  version="${{ steps.get_version.outputs.version }}"
+                  if [[ $(gh release list | grep "$version") ]]; then
+                    echo "Release $version already exists. Skipping build and push."
+                    echo "::set-output name=release_exists::true"
+                  else
+                    echo "Release $version does not exist. Proceeding with build and push."
+                    echo "::set-output name=release_exists::false"
+                  fi
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Login to GitHub Container Registry
+              if: steps.check_release.outputs.release_exists == 'false'
+              uses: docker/login-action@v1
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Build and Push Image
+              if: steps.check_release.outputs.release_exists == 'false'
+              uses: docker/build-push-action@v2
+              with:
+                  context: .
+                  file: ./Dockerfile
+                  push: true
+                  tags: |
+                      ghcr.io/markussim/mini-bots:${{ steps.get_version.outputs.version }}
+                      ghcr.io/markussim/mini-bots:latest
+
+            - name: Extract release notes
+              if: steps.check_release.outputs.release_exists == 'false'
+              id: extract-release-notes
+              uses: ffurrer2/extract-release-notes@v1
+
+            - name: Create release
+              if: steps.check_release.outputs.release_exists == 'false'
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              uses: actions/create-release@v1
+              with:
+                  tag_name: ${{ steps.get_version.outputs.version }}
+                  release_name: ${{ steps.get_version.outputs.version }}
+                  body: ${{ steps.extract-release-notes.outputs.release_notes }}
+                  draft: false
+                  prerelease: false
