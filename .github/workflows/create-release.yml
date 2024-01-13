@@ -48,4 +48,7 @@ jobs:
               if: steps.check_release.outputs.release_exists == 'false'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: gh release create --notes '${{ steps.extract-release-notes.outputs.release_notes }}' --title '${{ steps.extract-release-notes.outputs.release_title }}'
+              run: |
+                  version="${{ steps.get_version.outputs.version }}"
+                  release_notes="${{ steps.extract-release-notes.outputs.release_notes }}"
+                  gh release create "$version" -F - <<<"$release_notes"
