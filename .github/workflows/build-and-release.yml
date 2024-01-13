@@ -35,6 +35,7 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Login to GitHub Container Registry
+              if: steps.check_release.outputs.release_exists == 'false'
               uses: docker/login-action@v1
               with:
                   registry: ghcr.io
