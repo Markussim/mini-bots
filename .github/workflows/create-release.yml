@@ -16,7 +16,7 @@ jobs:
 
             - name: Get latest version from CHANGELOG.md
               id: get_version
-              run: echo "::set-output name=version::$(awk '/##/ {print $2}' CHANGELOG.md | head -n 1)"
+              run: echo "::set-output name=version::$(awk -F '[][]' '/##/ {print $2}' CHANGELOG.md | head -n 1)"
 
             - name: Get release notes from CHANGELOG.md
               id: get_release_notes
