@@ -13,10 +13,39 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v3
+
+            - name: Get latest version from CHANGELOG.md
+              id: get_version
+              run: echo "::set-output name=version::$(awk '/##/ {print $2}' CHANGELOG.md | head -n 1)"
+
+            - name: Get release notes from CHANGELOG.md
+              id: get_release_notes
+              run: |
+                  version="${{ steps.get_version.outputs.version }}"
+                  release_notes=$(awk -v version="$version" '/## '"$version"'/,/^$/' CHANGELOG.md | tail -n +2 | sed '/^$/d')
+                  echo "::set-output name=release_notes::$(echo "$release_notes" | awk '{$1=$1;print}')"
+
+            - name: Check if release already exists
+              id: check_release
+              run: |
+                  version="${{ steps.get_version.outputs.version }}"
+                  if [[ $(gh release list | grep "$version") ]]; then
+                    echo "Release $version already exists. Skipping release creation."
+                    echo "::set-output name=release_exists::true"
+                  else
+                    echo "Release $version does not exist. Proceeding with release creation."
+                    echo "::set-output name=release_exists::false"
+                  fi
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
             - name: Extract release notes
+              if: steps.check_release.outputs.release_exists == 'false'
               id: extract-release-notes
               uses: ffurrer2/extract-release-notes@v1
+
             - name: Create release
+              if: steps.check_release.outputs.release_exists == 'false'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: gh release create --notes '${{ steps.extract-release-notes.outputs.release_notes }}' --title '${{ steps.extract-release-notes.outputs.release_title }}'
