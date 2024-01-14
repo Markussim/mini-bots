@@ -47,6 +47,11 @@ namespace MiniBots
 
             foreach (MiniBot miniBot in miniBots)
             {
+                if (!miniBot.Enabled)
+                {
+                    continue;
+                }
+
                 string botOutput = "";
                 try
                 {
