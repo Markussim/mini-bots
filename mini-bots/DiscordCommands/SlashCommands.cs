@@ -118,35 +118,25 @@ namespace MiniBots
         [SlashCommand("disable", "Disable a Minibot without deleting it.")]
         public async Task DisableCommand(InteractionContext ctx, [Option("BotName", "who will it be")] string name)
         {
-            MiniBot? miniBot = _databaseManager.GetMiniBotByName(name);
-
-            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
-
-            if (miniBot != null)
-            {
-                _databaseManager.SetMiniBotEnabled(miniBot.Id, false);
-                embedBuilder.WithTitle("Disabled bot: " + miniBot.Name);
-            }
-            else
-            {
-                embedBuilder.WithTitle("No bot with name: " + name);
-                embedBuilder.WithDescription("List bots: /list");
-            }
-
-            await Reponse(ctx, embedBuilder.Build());
+            await SetEnabled(ctx, name, false);
         }
 
         [SlashCommand("enable", "Enable a Minibot.")]
         public async Task EnableCommand(InteractionContext ctx, [Option("BotName", "who will it be")] string name)
         {
+            await SetEnabled(ctx, name, true);
+        }
+
+        private async Task SetEnabled(InteractionContext ctx, string name, bool enable){
             MiniBot? miniBot = _databaseManager.GetMiniBotByName(name);
 
             DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
 
             if (miniBot != null)
             {
-                _databaseManager.SetMiniBotEnabled(miniBot.Id, true);
-                embedBuilder.WithTitle("Enabled bot: " + miniBot.Name);
+                _databaseManager.SetMiniBotEnabled(miniBot.Id, enable);
+                string titleText = enable ? "Enabled" : "Disabled";
+                embedBuilder.WithTitle($"{titleText} bot: " + miniBot.Name);
             }
             else
             {
