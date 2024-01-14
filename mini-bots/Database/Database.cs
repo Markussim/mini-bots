@@ -29,6 +29,8 @@ namespace MiniBots
         [StringLength(64)]
         public string Storage { get; set; }
 
+        public bool Enabled { get; set; }
+
         public MiniBot()
         {
         }
@@ -80,7 +82,8 @@ namespace MiniBots
                 {
                     Name = name,
                     Code = code,
-                    Storage = ""
+                    Storage = "",
+                    Enabled = true
                 };
 
                 _context.MiniBots.Add(newMiniBot);
@@ -125,6 +128,20 @@ namespace MiniBots
                 miniBot.Storage = data;
             }
 
+            _context.SaveChanges();
+        }
+
+        public void SetMiniBotEnabled(int id, bool enabled)
+        {
+            MiniBot? miniBot = _context.MiniBots.Find(id);
+
+            if (miniBot == null)
+            {
+                throw new Exception("MiniBot not found");
+            }
+
+            miniBot.Enabled = enabled;
+            _context.Update(miniBot);
             _context.SaveChanges();
         }
 
